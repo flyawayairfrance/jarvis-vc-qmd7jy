@@ -18,3 +18,8 @@ label{display:block;margin:6px 0;color:var(--mu)}label input{display:block;width
 .pos{color:var(--gr)}.neg{color:var(--rd)}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px;border-bottom:1px solid var(--line);text-align:left}
 .big{font-size:18px;margin-top:10px}canvas{width:100%;background:var(--card);border-radius:12px}.tag{font-size:11px;padding:1px 6px;border-radius:5px;background:#4a1d23;color:#ffb3bb;margin-left:6px}
 #msgs{height:calc(100vh - 290px);min-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px}.m{max-width:85%;padding:8px 12px;border-radius:12px;white-space:pre-wrap}.m.u{align-self:flex-end;background:#2a3550}.m.a{align-self:flex-start;background:var(--card);border:1px solid var(--line)}#chips button{font-size:12px;padding:5px 10px;border-radius:99px}
+#authPage{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 30% 10%,#1a2340,#0b0e14 60%);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.authCard{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 24px;box-shadow:0 20px 60px #0008}
+.authCard h1{margin:0 0 4px;font-size:22px}.authCard .logo{color:var(--ac);font-weight:700;font-size:18px;margin-bottom:18px}.authCard input{width:100%;margin:6px 0;padding:11px 12px}
+.authCard .pri{width:100%;padding:11px;margin-top:10px}.authCard .alt{width:100%;margin-top:10px;background:none}.authCard .skip{display:block;text-align:center;margin-top:16px;color:var(--mu);font-size:12px;background:none;border:0;width:100%}
+#acctHdr{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mu)}#acctHdr button{padding:3px 10px;font-size:12px}

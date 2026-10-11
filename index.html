@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Trading Assistant</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="brand">◆ Trading Assistant</div><div id="clock"></div><button id="acctBtn" style="padding:3px 10px">Sign in</button><div id="riskBadge" class="badge">Risk OK</div></header>
+<title>Trading Assistant</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head><body><div id="authPage" class="hidden"></div>
+<header><div class="brand">◆ Trading Assistant</div><div id="clock"></div><span id="acctHdr"></span><div id="riskBadge" class="badge">Risk OK</div></header>
 <div id="banner" class="hidden"></div>
 <div id="ticker" class="tv"></div>
 <nav id="tabs"><button data-t="plan" class="on">Plan</button><button data-t="chat">Assistant</button><button data-t="prep">Prep</button><button data-t="market">Market</button><button data-t="news">News</button><button data-t="journal">Journal</button><button data-t="risk">Risk</button></nav>
@@ -28,6 +28,6 @@
 <section id="risk" class="tab"><div class="grid2">
  <div class="card"><h3>Settings</h3><label>Account size $<input id="sAcct" type="number"></label><label>Risk per trade %<input id="sRisk" type="number" step="0.1"></label><label>Daily loss stop %<input id="sStop" type="number" step="0.1"></label><label>Max trades / day<input id="sMax" type="number"></label><div id="rec" class="bk" style="margin-top:8px"></div><button id="sSave" class="pri">Save</button></div>
  <div class="card"><h3>Position size</h3><label>Entry<input id="pEntry" type="number" step="any"></label><label>Stop<input id="pStop" type="number" step="any"></label><label>Point value ($ per 1.0 move per unit)<input id="pPv" type="number" step="any" value="1"></label><div id="pOut" class="big"></div></div>
- <div class="card"><h3>Today</h3><div id="riskToday"></div></div><div class="card" id="acctBox"></div><div class="card"><h3>Backup</h3><p class="muted">Download everything as a JSON file, or restore one.</p><button id="bkExport">Export backup</button> <label style="display:inline-block">Import <input type="file" id="bkImport" accept=".json,application/json" style="display:inline;width:auto"></label></div></div></section>
+ <div class="card"><h3>Today</h3><div id="riskToday"></div></div><div class="card"><h3>Backup</h3><p class="muted">Download everything as a JSON file, or restore one.</p><button id="bkExport">Export backup</button> <label style="display:inline-block">Import <input type="file" id="bkImport" accept=".json,application/json" style="display:inline;width:auto"></label></div></div></section>
 </main>
 <script src="sync.js"></script><script src="app.js"></script><script src="coach.js"></script><script src="rec.js"></script><script src="prep.js"></script><script src="assistant.js"></script></body></html>
