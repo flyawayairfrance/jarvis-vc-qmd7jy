@@ -65,7 +65,7 @@ function handle(raw){const t=norm(raw);let d=getDate(t);
  if(isDel&&!ses0&&!tm){if(!d){say('Which day should I clear?',['Today','Tomorrow','Friday']);pending={type:'redo',text:raw};return}snap();const n=dayPlan(D).length;plans[D]=[];commit();say(`✅ Cleared ${dname(D)} (${n} block${n==1?'':'s'} removed). Rest day.`,['Undo']);return}
  if(isDel&&ses0){const bl=findBlk(D,ses0);if(!bl.length){say(`There's no ${ses0.n} block on ${dname(D)}.`);return}snap();plans[D]=dayPlan(D).filter(b=>!bl.includes(b));commit();say(`✅ Removed ${bl.map(blkTxt).join(', ')} on ${dname(D)}.`,['Undo',"Today's plan"]);return}
  const isMove=/\b(move|shift|push|pull|deplace|decale|reschedule|change)\b/.test(t),isSize=/\b(extend|shorten|resize|make|longer|shorter|allonge|raccourci|prolonge|until|jusqu)\b/.test(t)||dur(t),isAdd=/\b(trade|add|schedule|plan|book|ajoute|planifie|session|block|trader)\b/.test(t)||(ses0&&tm);
- if(!(isMove||isSize||isAdd)){say("Sorry, I didn't get that. Try one of these:",["Today's plan",'trade London tomorrow 14-16','move Tokyo to 8am','skip Friday','Help']);return}
+ if(!(isMove||isSize||isAdd)){say("Do you want to change your plan, goals or risk, or get a summary? Pick one, or tell me more:",["Today's plan",'trade London tomorrow 14-16','move Tokyo to 8am','skip Friday','Help']);return}
  if(!ses0&&!tm){say('Which session?',['Tokyo','London','New York']);pending={type:'ses',text:raw};return}
  let bl=ses0?findBlk(D,ses0):[];
  if(isMove&&!tm){say(`What time should ${ses0.n} start on ${dname(D)}?`,['8am','14:00','20:30']);pending={type:'time',text:raw};return}
@@ -76,7 +76,39 @@ function handle(raw){const t=norm(raw);let d=getDate(t);
  if(b.e<=b.s)b.e=b.s+60;b.e=Math.min(b.e,1440);dayPlan(D).sort((a,c)=>a.s-c.s);if(b.key&&D==today())learnFor(b,D);commit();
  const ev=dayEvents(D).filter(e=>e.m>=b.s-30&&e.m<=b.e);say(`✅ ${verb} ${blkTxt(b)} on ${dname(D)}.${ev.length?'\n⚠ High-impact inside: '+ev.map(e=>fmtM(e.m)+' '+e.title).join(', '):''}`,['Undo',"Today's plan"])}
 function learnFor(b,D){const od=day;day=D;learn(b);day=od}
-function send(text){if(!text.trim())return;chat.push({id:mid(),t:Date.now(),r:'u',text,chips:[]});LS.s('chat',chat);try{handle(text)}catch(e){console.warn(e);say("Something went wrong parsing that. Try rephrasing, or type 'help'.")}draw()}
+
+const API_CHAT='https://trading-assistant-api-r2rdjjf2yc-4746.vercel.app/api/chat';
+const toMin=s=>{const m=String(s||'').match(/(\d{1,2}):?(\d{2})?/);return m?+m[1]*60+ +(m[2]||0):null};
+const sesOf=k=>k=='tokyo'?SES.tokyo:k=='london'?SES.london:k=='ny'?SES.cash:null;
+function appState(){const td=today(),days=[...Array(7)].map((_,i)=>addDays(td,i)),r=recommend(S.acct);
+ const tt=trades.slice(-200),tot=tt.reduce((a,t)=>a+t.pnl,0);
+ return{now_bangkok:new Date().toLocaleString('en-GB',{timeZone:TZ}),today:td,weekday:dname(td),
+  plans:Object.fromEntries(days.map(d=>[d+' '+dname(d).split(' ')[0],(plans[d]||propose(d)).map(b=>({session:b.key||'custom',title:b.title,start:fmtM(b.s),end:fmtM(b.e),goal:b.goal,symbols:b.symbol,prep_notes:b.prepNotes}))])),
+  market_sessions_today:sessions(td).map(s=>({name:s.n,start:fmtM(s.s),end:fmtM(s.e)})),
+  risk:{account:S.acct,risk_pct:S.risk,risk_usd:S.acct*S.risk/100,daily_stop_pct:S.stop,daily_stop_usd:S.acct*S.stop/100,max_trades:S.max},
+  recommendation:{risk_pct:r.r,risk_usd:r.usd,daily_stop_pct:r.d,daily_stop_usd:r.dusd,max_trades:r.m,why:r.why},account_size_set:!!LS.g('acctSet',0),
+  trades_summary:{count:tt.length,net_pnl:+tot.toFixed(2),win_rate:tt.length?Math.round(tt.filter(t=>t.pnl>0).length/tt.length*100):null,last5:tt.slice(-5).map(t=>({sym:t.sym,pnl:t.pnl,when:new Date(t.t).toLocaleString('en-GB',{timeZone:TZ})}))},
+  upcoming_high_impact_news:allEvents().filter(e=>e.impact=='High'&&e.t>Date.now()).slice(0,12).map(e=>({when:new Date(e.t).toLocaleString('en-GB',{timeZone:TZ,weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),country:e.country,title:e.title})),
+  prep_today:LS.g('prep_'+td,{})}}
+function act(x){const g=x.args||{},D=g.date||today(),ses=sesOf(g.session);
+ switch(x.name){
+ case 'set_block':case 'move_block':{let b=ses?findBlk(D,ses)[0]:null;if(!b){b=ses?proposeBlock(D,ses):{id:Date.now()+Math.random(),title:g.title||'Custom session',s:600,e:690,goal:goal(false),review:''};dayPlan(D).push(b)}
+  const len=b.e-b.s,s=toMin(g.start),e=toMin(g.end);if(s!=null)b.s=s;b.e=e!=null&&x.name=='set_block'?e:b.s+len;if(e===0)b.e=1440;if(g.title)b.title=g.title;if(g.symbols)b.symbol=g.symbols;if(g.prep_notes)b.prepNotes=g.prep_notes;if(b.e<=b.s)b.e=b.s+60;b.e=Math.min(b.e,1440);dayPlan(D).sort((p,q)=>p.s-q.s);act.last=b;act.lastD=D;return`${x.name=='move_block'?'Moved':'Set'} ${blkTxt(b)} on ${dname(D)}`}
+ case 'delete_block':{if(!ses){plans[D]=[];return`Cleared ${dname(D)}`}const bl=findBlk(D,ses);plans[D]=dayPlan(D).filter(b=>!bl.includes(b));return bl.length?`Removed ${ses.n} on ${dname(D)}`:null}
+ case 'set_goal':{const bl=ses?findBlk(D,ses):(act.last&&act.lastD==D?[act.last]:dayPlan(D));bl.forEach(b=>{if(g.pnl_target!=null)b.goal.pnl=g.pnl_target;if(g.max_trades!=null)b.goal.trades=g.max_trades;if(g.process_goal)b.goal.process=g.process_goal});return bl.length?`Goals updated (${bl.length} block${bl.length>1?'s':''}, ${dname(D)})`:null}
+ case 'set_risk':{if(g.account_size){S.acct=g.account_size;LS.s('acctSet',1)}if(g.risk_pct!=null)S.risk=g.risk_pct;if(g.daily_stop_pct!=null)S.stop=g.daily_stop_pct;if(g.max_trades_per_day!=null)S.max=g.max_trades_per_day;return`Risk: ${S.risk}% = ${money(S.acct*S.risk/100)}/trade, daily stop ${S.stop}% = ${money(S.acct*S.stop/100)}, max ${S.max} trades (account ${money(S.acct)})`}
+ case 'apply_recommendation':{const r=recommend(S.acct);S.risk=r.r;S.stop=r.d;S.max=r.m;return`Applied recommendation: ${r.r}% = ${money(r.usd)}, stop ${r.d}% = ${money(r.dusd)}, max ${r.m}`}
+ case 'prep_tick':{const b=ses?findBlk(D,ses)[0]:dayPlan(D)[0];if(!b)return null;const all=LS.g('prep_'+D,{}),o=all[b.id]||{s:{},bias:'',plan:{}},i=(g.step||1)-1;o.s[i]={...(o.s[i]||{}),c:g.checked!==false,...(g.note?{n:g.note}:{})};if(g.bias)o.bias=g.bias;all[b.id]=o;LS.s('prep_'+D,all);return`Prep step ${g.step} ${g.checked===false?'unticked':'ticked'} for ${b.title.split(' –')[0]}`}}
+ return null}
+async function aiReply(){const tk=localStorage.getItem('tasync_token');if(!tk||!navigator.onLine)return false;
+ const typing={id:mid(),t:Date.now(),r:'a',text:'…',chips:[],tmp:1};chat.push(typing);$('#msgs').insertAdjacentHTML('beforeend','<div class="m a" id="typing">…</div>');$('#msgs').scrollTop=1e9;chat.pop();
+ try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),45000);const r=await fetch(API_CHAT,{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({messages:chat.map(m=>({role:m.r=='u'?'user':'assistant',content:m.text})),state:appState()})});
+  if(!r.ok)throw new Error(r.status);const j=await r.json();let done=[];act.last=null;if(j.actions&&j.actions.length){snap();j.actions.forEach(x=>{try{const d=act(x);if(d)done.push(d)}catch(e){console.warn(e)}});LS.s('settings',S);commit()}
+  let txt=(j.text||'').trim();if(done.length)txt=(txt?txt+'\n\n':'')+'✅ '+done.join('\n✅ ');if(!txt)txt='Done. Anything else for your plan?';
+  const el=document.getElementById('typing');if(el)el.remove();say(txt,(j.chips&&j.chips.length)?j.chips:done.length?['Undo',"Today's plan"]:[]);return true}
+ catch(e){const el=document.getElementById('typing');if(el)el.remove();return false}}
+async function send(text){if(!text.trim())return;chat.push({id:mid(),t:Date.now(),r:'u',text,chips:[]});LS.s('chat',chat);draw();const t0=norm(text);const local=/^(undo|annule|annuler|yes, apply|no thanks|today s plan|help|aide|open prep tab)$/.test(t0)||(pending&&pending.type=='acct');
+ if(!local&&await aiReply())return;try{handle(text)}catch(e){console.warn(e);say("Could you tell me a bit more? For example which day, session or time you mean.")}draw()}
 $('#chatF').onsubmit=e=>{e.preventDefault();send($('#chatIn').value);$('#chatIn').value=''};
 $('#chips').onclick=e=>{if(e.target.tagName=='BUTTON')send(e.target.textContent)};
 function opened(){if(!LS.g('acctSet',0)&&!chat.some(m=>m.r=='a')){pending={type:'acct'};say("Hi Victor 👋 I'm your trading assistant. What's your (paper) account size in $?",['$1000','$5000','$10000','$25000'])}else if(!chat.length)say("Hi Victor 👋 Ask me anything about your plan. Type 'help' for examples.");draw()}

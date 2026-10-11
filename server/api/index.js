@@ -1,5 +1,6 @@
 import {put,list,del} from '@vercel/blob';
 import crypto from 'node:crypto';
+import {generateText,jsonSchema,tool} from 'ai';
 const TOK=process.env.BLOB_READ_WRITE_TOKEN;
 const h=s=>crypto.createHash('sha256').update(s).digest('hex');
 const scrypt=(pw,salt)=>new Promise((ok,no)=>crypto.scrypt(pw,salt,64,{N:16384,r:8,p:1},(e,k)=>e?no(e):ok(k.toString('hex'))));
@@ -22,6 +23,25 @@ export default async function handler(req,res){
   else{if(!u||!u.data)return J(401,{error:'Wrong email or password'});const k=await scrypt(pw,u.data.salt);if(!crypto.timingSafeEqual(Buffer.from(k,'hex'),Buffer.from(u.data.hash,'hex')))return J(401,{error:'Wrong email or password'})}
   const token=crypto.randomBytes(32).toString('hex');await save('tokens/'+h(token)+'.json',{uid,created:Date.now()});return J(200,{token,email})}
  const uid=await auth(req);if(!uid)return J(401,{error:'Not signed in'});
+
+ if(path=='chat'){const b=await body(req);const msgs=(b.messages||[]).filter(m=>m&&m.content).map(m=>({role:m.role=='user'?'user':'assistant',content:String(m.content).slice(0,4000)}));
+  const older=msgs.length>40?msgs.slice(0,-40):[];const recent=msgs.slice(-40);
+  const S=(p,r)=>tool({description:p,inputSchema:jsonSchema({type:'object',properties:r,additionalProperties:false})});
+  const D={type:'string',description:'YYYY-MM-DD in Bangkok time'},SE={type:'string',enum:['tokyo','london','ny','custom'],description:'session'},HM={type:'string',description:'HH:MM Bangkok 24h'};
+  const tools={
+   set_block:S('Add or update a trading session block on a day (creates it if missing). Attach the market/symbols and prep notes collected from the user.',{date:D,session:SE,start:HM,end:HM,title:{type:'string'},symbols:{type:'string',description:'e.g. XAUUSD, NQ, AAPL'},prep_notes:{type:'string',description:'what to prepare: bias, key levels, FVG/OB, news to watch, goal'}}),
+   suggest_replies:S('Show 2-5 short quick-reply chips the user can tap to answer your question.',{options:{type:'array',items:{type:'string'},maxItems:5}}),
+   move_block:S('Move a session block to a new start time, keeping duration.',{date:D,session:SE,start:HM}),
+   delete_block:S('Delete a session block; omit session to clear the whole day (rest day).',{date:D,session:SE}),
+   set_goal:S('Set goals of a block (or all blocks of the day if session omitted).',{date:D,session:SE,pnl_target:{type:'number'},max_trades:{type:'number'},process_goal:{type:'string'}}),
+   set_risk:S('Change risk settings.',{account_size:{type:'number'},risk_pct:{type:'number'},daily_stop_pct:{type:'number'},max_trades_per_day:{type:'number'}}),
+   apply_recommendation:S('Apply the recommended risk settings shown in state.recommendation.',{}),
+   prep_tick:S('Tick/untick a pre-session prep step (1 news,2 HTF bias,3 key levels,4 FVG/OB,5 entry trigger,6 trade plan,7 mindset), optionally set note or bias.',{date:D,session:SE,step:{type:'integer',minimum:1,maximum:7},checked:{type:'boolean'},note:{type:'string'},bias:{type:'string',enum:['Bull','Bear','Range']}})};
+  const system=`You are Victor's personal day-trading assistant inside his Trading Assistant app. Victor lives in Bangkok (UTC+7), paper trades on TradingView: forex, US stocks, futures/indices, gold, crypto (no crypto on weekends). Reply in the user's language (English or French), concise, practical, warm. Always state money as % and $. Use tools to change the app whenever the user asks for a change; you can call several tools. Never say you didn't understand: if a request is ambiguous, ask one short clarifying question with options. Remember and refer back to earlier conversation.
+SCHEDULING FLOW: when Victor asks to schedule/plan a session but details are missing, do NOT create it yet. Ask natural follow-ups one or two at a time (with suggest_replies chips): 1) which market/symbol(s) (e.g. Gold XAUUSD, NQ, EURUSD, a stock), 2) day + time or session (offer the matching sessions with Bangkok times from state), 3) what to prepare (HTF bias, 1H key levels, 15m FVG/order blocks, news to watch from state, P&L goal). Once you have market + time (prep can default to the standard routine if he says 'default'/'skip'), call set_block with symbols and prep_notes, plus set_goal if he gave a target, then confirm briefly with the session time, symbols, prep checklist and any high-impact news inside it. When the request is already complete, act immediately without extra questions. Whenever you ask a question, END your message with a final line exactly like: CHIPS: option 1 | option 2 | option 3 (2-5 short tappable answers). When calling set_goal for a block you just scheduled, always pass its session. Don't list options as a long bullet list if they are in CHIPS; keep messages short and natural. Times are Bangkok time. Session keys: tokyo, london, ny (US cash open/overlap), custom.\nCURRENT APP STATE (JSON):\n${JSON.stringify(b.state||{}).slice(0,12000)}`+(older.length?`\nEARLIER CONVERSATION (condensed): `+older.map(m=>(m.role=='user'?'U: ':'A: ')+m.content.slice(0,160).replace(/\s+/g,' ')).join(' | ').slice(0,6000):'');
+  const r=await generateText({model:process.env.AI_MODEL||'openai/gpt-4.1-mini',system,messages:recent.length?recent:[{role:'user',content:'hi'}],tools,maxOutputTokens:700});
+  let txt=r.text||'',cm=txt.match(/\n?\s*CHIPS:\s*(.+)\s*$/i),chips2=[];if(cm){chips2=cm[1].split('|').map(x=>x.trim().replace(/^[*_`]+|[*_`]+$/g,'')).filter(Boolean).slice(0,5);txt=txt.slice(0,cm.index).trim()}
+  return J(200,{text:txt,actions:(r.toolCalls||[]).filter(c=>c.toolName!='suggest_replies').map(c=>({name:c.toolName,args:c.input})),chips:((r.toolCalls||[]).find(c=>c.toolName=='suggest_replies')?.input?.options||[]).slice(0,5).concat(chips2).slice(0,5)})}
  if(path=='logout'){const a=req.headers.authorization.replace(/^Bearer /,'');const b=await latest('tokens/'+h(a)+'.json');if(b)await del(b.map(x=>x.url),{token:TOK});return J(200,{ok:true})}
  if(path=='state'){const cur=await getOne('state/'+uid+'/');let st=cur?.data||{keys:{},ts:{}};
   if(req.method=='GET')return J(200,st);

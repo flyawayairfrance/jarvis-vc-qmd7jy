@@ -23,7 +23,7 @@ function blocksToday(){return(plans[day]||plan()).slice().sort((a,c)=>a.s-c.s)}
 function render(){const bl=blocksToday(),sel=$('#prepBlk');if(!bl.length){sel.innerHTML='';$('#prepTips').textContent='No sessions planned for '+day+'. Add one on the Plan tab or ask the Assistant.';$('#prepSteps').innerHTML='';$('#prepStatus').textContent='—';return}
  if(!cur||!bl.find(b=>b.id==cur)){const now=bkMin(new Date());cur=(bl.find(b=>b.e>now&&day==bkDate(new Date()))||bl[0]).id}
  sel.innerHTML=bl.map(b=>`<option value="${b.id}" ${b.id==cur?'selected':''}>${day} · ${fmtM(b.s)} ${esc(b.title.split(' –')[0])} (prep ${fmtM(b.s-40)})</option>`).join('');
- const b=bl.find(x=>x.id==cur),o=st(day)[cur]||{s:{},bias:'',plan:{}},ss=steps(b,day);$('#prepTips').textContent=tips(b,day)+`  ⏰ Start prep at ${fmtM(b.s-40)} BKK.`;
+ const b=bl.find(x=>x.id==cur),o=st(day)[cur]||{s:{},bias:'',plan:{}},ss=steps(b,day);$('#prepTips').textContent=tips(b,day)+`  ⏰ Start prep at ${fmtM(b.s-40)} BKK.`+(b.symbol?`  📈 ${b.symbol}.`:'')+(b.prepNotes?`  🧭 Your notes: ${b.prepNotes}`:'');
  const p=o.plan||{},risk=Math.abs(p.entry-p.stop),rr=risk?Math.abs(p.target-p.entry)/risk:NaN,size=risk?(S.acct*S.risk/100)/risk:NaN;
  $('#prepSteps').innerHTML=ss.map((x,i)=>`<div class="bk"><label style="color:var(--tx);margin:0"><input type="checkbox" data-c="${i}" ${o.s[i]?.c?'checked':''} style="display:inline;width:auto"> <b>${i+1}. ${x.t}</b> <span class="tag" style="background:#1d2a44;color:#9cc0ff">${x.tf}</span></label><div class="muted" style="margin:4px 0">${esc(x.look)}</div>
  ${x.bias?`<div class="row">${['Bull','Bear','Range'].map(v=>`<button data-bias="${v}" class="${o.bias==v?'pri':''}">${v}</button>`).join('')}</div>`:''}

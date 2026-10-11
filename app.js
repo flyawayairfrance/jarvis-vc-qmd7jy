@@ -37,7 +37,7 @@ function renderPlan(){$('#day').value=day;const tl=$('#timeline');tl.innerHTML='
  plan().forEach(b=>{const el=document.createElement('div');el.className='blk';el.style.top=b.s*PX+'px';el.style.height=Math.max(18,(b.e-b.s)*PX)+'px';el.textContent=`${fmtM(b.s)}–${fmtM(b.e)} ${b.title}`;drag(el,b);tl.appendChild(el)});
  const ss=sessions(day);$('#dayNote').textContent=isWeekend(day)?'Weekend: markets closed, no crypto on weekends – rest & review.':ss.map(s=>`${s.n} ${fmtM(s.s)}–${fmtM(s.e)}`).join(' · ')+' (Bangkok)';
  $('#blocks').innerHTML=plan().map(b=>`<div class="bk" data-id="${b.id}"><div class="row"><input data-f="title" value="${esc(b.title)}"><button data-del>✕</button></div>
- <div class="row"><input type="time" data-f="s" value="${fmtM(b.s)}"><input type="time" data-f="e" value="${fmtM(b.e)}"></div>${b.note?`<div class="neg">${esc(b.note)}</div>`:''}
+ <div class="row"><input type="time" data-f="s" value="${fmtM(b.s)}"><input type="time" data-f="e" value="${fmtM(b.e)}"></div>${b.note?`<div class="neg">${esc(b.note)}</div>`:''}${b.symbol?`<div>📈 <b>${esc(b.symbol)}</b></div>`:''}${b.prepNotes?`<div class="muted">🧭 Prep: ${esc(b.prepNotes)}</div>`:''}
  <div class="row"><input type="number" data-g="pnl" value="${b.goal.pnl}" title="P&L target $"><input type="number" data-g="trades" value="${b.goal.trades}" title="Max trades"></div><input data-g="process" value="${esc(b.goal.process)}" style="width:100%">
  <textarea data-f="review" placeholder="End-of-session review: grade, what worked, lesson" style="width:100%;margin-top:6px">${esc(b.review||'')}</textarea></div>`).join('')||'<p class="muted">No blocks. Tap “Assistant: propose” or “+ Block”.</p>';
  renderChecklist()}
