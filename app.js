@@ -84,7 +84,7 @@ function renderJournal(){trades.sort((a,b)=>a.t-b.t);const tot=trades.reduce((a,
  $('#byDay').innerHTML=group(t=>bkDate(new Date(t.t)));$('#bySes').innerHTML=group(t=>sesOf(t.t));$('#bySym').innerHTML=group(t=>t.sym);
  $('#trades').innerHTML='<table>'+trades.slice().reverse().map(t=>`<tr><td>${new Date(t.t).toLocaleString('en-GB',{timeZone:TZ,dateStyle:'short',timeStyle:'short'})}</td><td>${esc(t.sym)}</td><td>${esc(t.side)}</td><td class="${t.pnl>=0?'pos':'neg'}">${money(t.pnl)}</td><td>${esc(t.note||'')}</td><td><button data-a="${esc(t.id)}">Analyse</button></td><td><button data-x="${esc(t.id)}">✕</button></td></tr>`).join('')+'</table>';
  drawEquity();renderRisk();window.renderCoach&&renderCoach()}
-$('#trades').addEventListener('click',e=>{const id=e.target.dataset.x;if(id==null)return;trades=trades.filter(t=>String(t.id)!==id);LS.s('trades',trades);renderJournal()});
+$('#trades').addEventListener('click',e=>{const id=e.target.dataset.x;if(id==null)return;trades=trades.filter(t=>String(t.id)!==id);LS.s('tradesDel',[...LS.g('tradesDel',[]),id]);LS.s('trades',trades);renderJournal()});
 function drawEquity(){const c=$('#equity'),x=c.getContext('2d');c.width=c.clientWidth*devicePixelRatio;c.height=180*devicePixelRatio;x.scale(devicePixelRatio,devicePixelRatio);const W=c.clientWidth,H=180;let eq=[S.acct];trades.forEach(t=>eq.push(eq[eq.length-1]+t.pnl));const mn=Math.min(...eq),mx=Math.max(...eq),sp=mx-mn||1;
  x.strokeStyle='#d4af37';x.lineWidth=2;x.beginPath();eq.forEach((v,i)=>{const px=10+i*(W-20)/Math.max(1,eq.length-1),py=H-15-(v-mn)/sp*(H-30);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.fillStyle='#8a93a6';x.font='11px sans-serif';x.fillText('Equity '+money(eq[eq.length-1]),12,14)}
 // Risk
