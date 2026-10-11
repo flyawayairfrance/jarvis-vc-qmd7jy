@@ -3,7 +3,7 @@
 <header><div class="brand">◆ Trading Assistant</div><div id="clock"></div><div id="riskBadge" class="badge">Risk OK</div></header>
 <div id="banner" class="hidden"></div>
 <div id="ticker" class="tv"></div>
-<nav id="tabs"><button data-t="plan" class="on">Plan</button><button data-t="market">Market</button><button data-t="news">News</button><button data-t="journal">Journal</button><button data-t="risk">Risk</button></nav>
+<nav id="tabs"><button data-t="plan" class="on">Plan</button><button data-t="chat">Assistant</button><button data-t="market">Market</button><button data-t="news">News</button><button data-t="journal">Journal</button><button data-t="risk">Risk</button></nav>
 <main>
 <section id="plan" class="tab on">
  <div class="row"><button id="prevDay">‹</button><input type="date" id="day"><button id="nextDay">›</button><button id="propose" class="pri">Assistant: propose</button><button id="addBlock">+ Block</button></div>
@@ -12,6 +12,7 @@
  <div><div id="blocks"></div>
  <div class="card"><h3>Pre-session checklist</h3><div id="checklist"></div></div></div></div>
 </section>
+<section id="chat" class="tab"><div id="msgs"></div><div id="chips" class="row wrap"></div><form id="chatF" class="row"><input id="chatIn" autocomplete="off" placeholder="e.g. trade London tomorrow 14-16" style="flex:1"><button class="pri">Send</button></form></section>
 <section id="market" class="tab"><div id="chart" class="tv" style="height:520px"></div><div id="overview" class="tv" style="height:480px;margin-top:12px"></div></section>
 <section id="news" class="tab"><div class="card"><h3>High-impact events this week (Bangkok time)</h3><div class="row"><button id="notifBtn">Enable notifications</button><button id="reloadNews">Reload</button><span id="newsSrc" class="muted"></span></div><div id="events"></div>
  <details><summary>Add event manually</summary><div class="row"><input id="evTitle" placeholder="e.g. US CPI"><input id="evTime" type="datetime-local"><button id="evAdd">Add</button></div></details></div>
@@ -28,4 +29,4 @@
  <div class="card"><h3>Position size</h3><label>Entry<input id="pEntry" type="number" step="any"></label><label>Stop<input id="pStop" type="number" step="any"></label><label>Point value ($ per 1.0 move per unit)<input id="pPv" type="number" step="any" value="1"></label><div id="pOut" class="big"></div></div>
  <div class="card"><h3>Today</h3><div id="riskToday"></div></div></div></section>
 </main>
-<script src="app.js"></script><script src="coach.js"></script><script src="rec.js"></script></body></html>
+<script src="app.js"></script><script src="coach.js"></script><script src="rec.js"></script><script src="assistant.js"></script></body></html>
