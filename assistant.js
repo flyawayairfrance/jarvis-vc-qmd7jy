@@ -1,5 +1,5 @@
 'use strict';
-(()=>{const $=s=>document.querySelector(s);let chat=LS.g('chat',[]),pending=LS.g('chatPending',null),undo=[];
+(()=>{const $=s=>document.querySelector(s);let chat=LS.g('chat',[]),pending=LS.g('chatPending',null),undo=LS.g('undo',[]);const mid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const SES={tokyo:{re:/\b(tokyo|asia|asie|asian)\b/,n:'Tokyo',k:'tokyo'},london:{re:/\b(london|londres|lon|europe)\b/,n:'London',k:'london'},cash:{re:/\b(ny|nyc|new york|us|cash|wall street|nasdaq|overlap)\b/,n:'New York',k:'cash'}};
 const DAYS=[['sunday','dimanche'],['monday','lundi'],['tuesday','mardi'],['wednesday','mercredi'],['thursday','jeudi'],['friday','vendredi'],['saturday','samedi']];
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim();
@@ -16,14 +16,14 @@ function getTimes(t){const T='(\\d{1,2})(?:[:h.](\\d{2})|h)?\\s*(am|pm)?';let m=
  if(m){const a=hm(m[1],m[2],m[3]);if(a!=null)return{s:a}}return null}
 function getSes(t){for(const k in SES)if(SES[k].re.test(t))return SES[k];return null}
 function dur(t){const m=t.match(/(\d+(?:\.\d+)?)\s*(hours?|hrs?|heures?)/);if(m)return Math.round(+m[1]*60);const n=t.match(/(\d+)\s*(min|minutes)/);return n?+n[1]:null}
-function snap(){undo.push(JSON.stringify({plans,S,prefs}));if(undo.length>20)undo.shift()}
+function snap(){undo.push(JSON.stringify({plans,S,prefs}));if(undo.length>20)undo.shift();LS.s('undo',undo)}
 function commit(){save();LS.s('settings',S);LS.s('prefs',prefs);renderPlan();renderJournal()}
 function dayPlan(d){if(!plans[d])plans[d]=propose(d);return plans[d]}
 function findBlk(d,ses){return dayPlan(d).filter(b=>b.key==ses.k||norm(b.title).match(ses.re))}
 function proposeBlock(d,ses){const p=propose(d).find(b=>b.key==ses.k);if(p)return p;const ss=sessions(d).find(x=>x.k==(ses.k=='cash'?'cash':ses.k));const s=ses.k=='cash'?ss.s-30:ss.s;return{id:Date.now(),key:ses.k,title:ses.n+' session',s,e:s+120,goal:goal(ses.k!='tokyo'),review:''}}
 const blkTxt=b=>`${fmtM(b.s)}–${fmtM(b.e)} ${b.title}`;
-function say(text,chips){chat.push({r:'a',text,chips:chips||[]});draw()}
-function draw(){chat=chat.slice(-150);LS.s('chat',chat);LS.s('chatPending',pending);$('#msgs').innerHTML=chat.map(m=>`<div class="m ${m.r}">${esc(m.text)}</div>`).join('');$('#msgs').scrollTop=1e9;
+function say(text,chips){chat.push({id:mid(),t:Date.now(),r:'a',text,chips:chips||[]});draw()}
+function draw(){LS.s('chat',chat);LS.s('chatPending',pending);$('#msgs').innerHTML=chat.map(m=>`<div class="m ${m.r}">${esc(m.text)}</div>`).join('');$('#msgs').scrollTop=1e9;
  const last=chat[chat.length-1];const ch=(last&&last.r=='a'&&last.chips.length?last.chips:["Today's plan",'Upcoming news','Recommend risk','Help']);$('#chips').innerHTML=ch.map(c=>`<button type="button">${esc(c)}</button>`).join('')}
 const HELP='I can:\n• trade London tomorrow 14-16 / ajoute Londres demain 14h-16h\n• move Tokyo to 8am / déplace NY à 21h\n• make London 3 hours / extend NY to 23:30\n• skip Friday / pas de trading vendredi\n• no NY on CPI day / delete Tokyo today\n• target $200 London / max 3 trades / goal: wait for retest\n• risk 0.5% / daily stop 2% / account 5000\n• recommend risk / apply\n• today\'s plan / news / undo\n• prep / prépare la session';
 function summary(d){const b=dayPlan(d),ev=dayEvents(d);let s=`📅 ${dname(d)} (Bangkok)\n`;s+=b.length?b.map(x=>`• ${blkTxt(x)} — target ${money(x.goal.pnl)}, max ${x.goal.trades} trades${x.note?'\n  '+x.note:''}`).join('\n'):'• No sessions planned.';s+=ev.length?'\n⚠ High-impact: '+ev.map(e=>fmtM(e.m)+' '+(e.country||'')+' '+e.title).join(', '):'\nNo high-impact news.';s+=`\nRisk: ${S.risk}% = ${money(S.acct*S.risk/100)}/trade · daily stop ${S.stop}% = ${money(S.acct*S.stop/100)}`;return s}
@@ -40,7 +40,7 @@ function handle(raw){const t=norm(raw);let d=getDate(t);
   if(p.type=='redo'&&d){pending=null;handle(p.text+' '+d);return}
   if(p.type=='time'){const tm=getTimes(t);if(tm){pending=null;handle(p.text+' '+fmtM(tm.s)+(tm.e?'-'+fmtM(tm.e):''));return}}
   pending=null}
- if(/^(undo|annule|annuler|cancel that|revert|defaire)\b/.test(t)){if(!undo.length){say('Nothing to undo.');return}const o=JSON.parse(undo.pop());Object.keys(plans).forEach(k=>delete plans[k]);Object.assign(plans,o.plans);Object.assign(S,o.S);Object.keys(prefs).forEach(k=>delete prefs[k]);Object.assign(prefs,o.prefs);commit();say('↩ Undone.');return}
+ if(/^(undo|annule|annuler|cancel that|revert|defaire)\b/.test(t)){if(!undo.length){say('Nothing to undo.');return}const o=JSON.parse(undo.pop());LS.s('undo',undo);Object.keys(plans).forEach(k=>delete plans[k]);Object.assign(plans,o.plans);Object.assign(S,o.S);Object.keys(prefs).forEach(k=>delete prefs[k]);Object.assign(prefs,o.prefs);commit();say('↩ Undone.');return}
  if(/\b(prep|prepare|preparation|get ready)\b/.test(t)){say(window.prepSummary(d||today()),['Open Prep tab',"Today's plan"]);return}
  if(/^open prep/.test(t)){document.querySelector('[data-t=prep]').click();say('Opened the Prep tab.');return}
  if(/^(help|aide|\?|what can you do|commands)/.test(t)){say(HELP);return}
@@ -76,7 +76,7 @@ function handle(raw){const t=norm(raw);let d=getDate(t);
  if(b.e<=b.s)b.e=b.s+60;b.e=Math.min(b.e,1440);dayPlan(D).sort((a,c)=>a.s-c.s);if(b.key&&D==today())learnFor(b,D);commit();
  const ev=dayEvents(D).filter(e=>e.m>=b.s-30&&e.m<=b.e);say(`✅ ${verb} ${blkTxt(b)} on ${dname(D)}.${ev.length?'\n⚠ High-impact inside: '+ev.map(e=>fmtM(e.m)+' '+e.title).join(', '):''}`,['Undo',"Today's plan"])}
 function learnFor(b,D){const od=day;day=D;learn(b);day=od}
-function send(text){if(!text.trim())return;chat.push({r:'u',text,chips:[]});try{handle(text)}catch(e){console.warn(e);say("Something went wrong parsing that. Try rephrasing, or type 'help'.")}draw()}
+function send(text){if(!text.trim())return;chat.push({id:mid(),t:Date.now(),r:'u',text,chips:[]});LS.s('chat',chat);try{handle(text)}catch(e){console.warn(e);say("Something went wrong parsing that. Try rephrasing, or type 'help'.")}draw()}
 $('#chatF').onsubmit=e=>{e.preventDefault();send($('#chatIn').value);$('#chatIn').value=''};
 $('#chips').onclick=e=>{if(e.target.tagName=='BUTTON')send(e.target.textContent)};
 function opened(){if(!LS.g('acctSet',0)&&!chat.some(m=>m.r=='a')){pending={type:'acct'};say("Hi Victor 👋 I'm your trading assistant. What's your (paper) account size in $?",['$1000','$5000','$10000','$25000'])}else if(!chat.length)say("Hi Victor 👋 Ask me anything about your plan. Type 'help' for examples.");draw()}
