@@ -151,7 +151,7 @@ td,th{border-bottom:1px solid rgba(0,229,255,.08)}th{color:var(--mu);font-weight
 #chips button{background:rgba(0,229,255,.06);border-color:rgba(0,229,255,.25);color:var(--cy)}
 #chatF{margin-top:8px}#chatF input{min-height:46px;border-radius:14px;min-width:0}#chatF button{min-height:46px;border-radius:14px;padding:0 20px}
 .jv-feed{margin:0}.jv-al{padding:9px 11px;border-radius:10px;margin:6px 0;font-size:13px;border-left:3px solid var(--cy);background:rgba(0,229,255,.05)}
-.jv-al.bad{border-color:var(--rd);background:rgba(255,84,112,.08)}.jv-al.warn{border-color:var(--ac);background:rgba(242,193,78,.08)}.jv-al.ev{border-color:var(--ac)}
+.jv-al.bad{border-color:var(--rd);background:rgba(255,84,112,.08)}.jv-al.warn{border-color:var(--ac);background:rgba(242,193,78,.08)}.jv-al.jv-ev{border-color:var(--ac)}
 #authPage{background:radial-gradient(circle at 50% 20%,rgba(0,229,255,.18),#05080d 60%)}.authCard{background:rgba(14,24,36,.85);border:1px solid rgba(0,229,255,.25);box-shadow:0 0 50px rgba(0,229,255,.12)}.authCard .logo{color:var(--cy);letter-spacing:3px}
 .av{background:linear-gradient(180deg,#ffd877,#e0a92a)}
 /* overflow guards */
@@ -184,3 +184,9 @@ main,section,.card,.row,.grid2,.grid3{min-width:0}.row>*{min-width:0}.grid2>*,.g
 .jv-imp{flex:0 0 auto;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:6px}.jv-imp.high{background:rgba(255,84,112,.15);color:var(--rd)}.jv-imp.med{background:rgba(242,193,78,.15);color:var(--ac)}.jv-imp.low{background:rgba(0,229,255,.1);color:var(--cy)}
 .jv-chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.jv-chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:var(--cy)}
 .jv-watch{font-size:13px}.jv-watch span{color:var(--ac)}.jv-meta{font-size:12px}.jv-pts{margin:6px 0;padding-left:18px}
+/* alerts feed: stacked readable cards, scroll */
+.jv-feed #jvAlerts,.jv-feed #jvOpps{position:static}
+.jv-feed .jv-al{position:static!important;display:block;border-top:0;color:var(--tx);line-height:1.4;word-break:break-word;pointer-events:auto}
+.jv-feed{display:flex;flex-direction:column}
+#jvAlertsWrap{max-height:min(60vh,520px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:4px}
+.jv-al b{margin-right:4px}.jv-al small{display:block;color:var(--mu);margin-top:3px;font-size:11px}

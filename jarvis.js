@@ -8,7 +8,7 @@
     if(b&&!b.classList.contains('hidden')&&txt(b))items.push({k:b.classList.contains('warn')?'warn':'bad',t:txt(b)});
     var r=document.getElementById('riskBadge');if(r&&r.classList.contains('bad'))items.push({k:'bad',t:'Risk: '+txt(r)});
     var p=document.getElementById('prepStatus');if(p&&txt(p))items.push({k:'info',t:'Prep: '+txt(p)});
-    var ev=document.getElementById('events');if(ev)Array.prototype.slice.call(ev.children,0,5).forEach(function(c){var t=txt(c);if(t)items.push({k:'ev',t:t})});
+    var ev=document.getElementById('events');if(ev)Array.prototype.slice.call(ev.children,0,5).forEach(function(c){var t=txt(c);if(t)items.push({k:'jv-ev',t:t})});
     feed.innerHTML='';if(!items.length){feed.innerHTML='<p class="muted">No active alerts.</p>';return}
     items.forEach(function(i){var d=document.createElement('div');d.className='jv-al '+i.k;d.textContent=i.t;feed.appendChild(d)})}
   var q;function sched(){clearTimeout(q);q=setTimeout(render,120)}
