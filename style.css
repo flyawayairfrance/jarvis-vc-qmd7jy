@@ -257,3 +257,6 @@ html{-webkit-tap-highlight-color:transparent}button{touch-action:manipulation}
 .lv-badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid #333;color:#aaa;white-space:nowrap}.lv-badge.live{color:#26c281;border-color:#26c28166}.lv-badge.delay{color:#f2c14e;border-color:#f2c14e66}.lv-badge.closed{color:#888}
 .lv-mtf{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;font-size:11px}.lv-mtf span{padding:1px 7px;border-radius:6px;background:#161616;color:#999}.lv-mtf .up{color:#26c281}.lv-mtf .down{color:#ef4f5f}
 #lvSrc{display:block;margin-top:6px;font-size:11px}#lvTv.on{border-color:#fff6}
+.nt-row{display:flex!important;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #1e1e1e}.nt-row input{width:auto!important;margin:0}
+.nt-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.nt-guide{border:1px solid #fff3;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:8px}.nt-guide ol{margin:6px 0 0 18px;padding:0}
+.nt-toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);max-width:min(92vw,460px);background:#1a1a1a;border:1px solid #fff3;color:#eee;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:9999}.nt-toast.on{opacity:1;transform:translate(-50%,0)}

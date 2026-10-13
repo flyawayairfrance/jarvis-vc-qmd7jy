@@ -2,6 +2,7 @@ import {put,list,del} from '@vercel/blob';
 import crypto from 'node:crypto';
 import {generateText,jsonSchema,tool,stepCountIs} from 'ai';
 import * as M from '../lib/market.js';
+import * as N from '../lib/notify.js';
 const TOK=process.env.BLOB_READ_WRITE_TOKEN;
 const h=s=>crypto.createHash('sha256').update(s).digest('hex');
 const scrypt=(pw,salt)=>new Promise((ok,no)=>crypto.scrypt(pw,salt,64,{N:16384,r:8,p:1},(e,k)=>e?no(e):ok(k.toString('hex'))));
@@ -16,6 +17,7 @@ WHAT: what happened / is coming (time in Bangkok).
 IMPACT: which assets, likely direction for each scenario (beat/miss or hawkish/dovish), expected volatility (low/med/high, rough ATR multiple).
 WATCH/DO: levels or triggers to watch, when to stand aside, what setup to look for after the release.
 RISK: e.g. "cut size to 0.5% (half normal) or stay flat 5 min either side; widen stops ≥1 ATR". Paper-trading education, not financial advice.`;
+async function saveV(prefix,obj,old){await save(prefix+Date.now()+'.json',obj);if(old?.length)await del(old.map(b=>b.url),{token:TOK}).catch(()=>{})}
 export default async function handler(req,res){
  res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','content-type,authorization');res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,OPTIONS');res.setHeader('Cache-Control','no-store');
  if(req.method=='OPTIONS')return res.status(204).end();
@@ -39,6 +41,13 @@ export default async function handler(req,res){
   if(changed)await save('reports/feed.json',feed);
   if(path=='cron'){const r=await M.scan();const c2=await getOne('alerts/feed.json');const f=c2?.data||{alerts:[]};const seen=new Set(f.alerts.map(x=>x.id));await save('alerts/feed.json',{at:r.at,weekend:r.weekend,scanned:r.scanned,errors:r.errors,alerts:[...r.alerts.filter(x=>!seen.has(x.id)),...f.alerts].filter(x=>Date.now()-x.t<24*36e5).slice(0,80)})}
   return J(200,{at:feed.at,reports:feed.reports.slice(0,20),briefing:feed.briefings[bd]||null,date:bd})}
+ if(path=='push/key')return J(200,{key:N.publicKey()});
+ if(path=='tick'){const now=Date.now();const lkr=await getOne('push/_tick/'),lk=lkr?.data||{at:0};const q=new URLSearchParams((req.url||'').split('?')[1]||'');if(now-lk.at<170e3&&!q.get('force'))return J(200,{skipped:true,last:lk.at});await saveV('push/_tick/',{at:now},lkr?.blobs);
+  const {blobs}=await list({prefix:'push/u/',token:TOK});const g={};for(const b of blobs){const uid=b.pathname.split('/')[2];(g[uid]=g[uid]||[]).push(b)}const users=[];for(const [uid,bs] of Object.entries(g)){bs.sort((a,b)=>b.pathname.localeCompare(a.pathname));const rec=await readJSON(bs[0].url);if(rec?.subs?.length)users.push({uid,rec,blobs:bs})}
+  const bd=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});const need=k=>users.some(u=>({...N.DEF,...(u.rec.prefs||{})})[k]);
+  const shared={bd,w:{},cal:need('news')?await M.calendar('High',2).catch(()=>[]):[],briefing:need('briefing')?(await getOne('reports/feed.json'))?.data?.briefings?.[bd]?.text:null,alerts:[]};
+  if(need('scanner')){const cur=await getOne('alerts/feed.json');let feed=cur?.data||{at:0,alerts:[]};if(now-feed.at>10*60e3){const r=await M.scan();const seen=new Set(feed.alerts.map(x=>x.id));feed={at:r.at,weekend:r.weekend,scanned:r.scanned,errors:r.errors,alerts:[...r.alerts.filter(x=>!seen.has(x.id)),...feed.alerts].filter(x=>now-x.t<24*36e5).slice(0,80)};await save('alerts/feed.json',feed)}shared.alerts=feed.alerts}
+  const log=await N.tick({users,shared,getState:async uid=>(await getOne('state/'+uid+'/'))?.data});for(const u of users)if(u.dirty)await saveV('push/u/'+u.uid+'/',u.rec,u.blobs);return J(200,{ok:true,users:users.length,log})}
  if(path=='candles'){const q=new URLSearchParams((req.url||'').split('?')[1]||'');const r=await M.candles(q.get('symbol')||'EURUSD',q.get('tf')||'1h',Math.min(+q.get('n')||300,1000),+q.get('at')||0);res.setHeader('Cache-Control',q.get('rt')?'public, max-age=1, s-maxage=2':/^(1m|5m|15m)$/.test(q.get('tf')||'')?'public, max-age=10':'public, max-age=300');return J(200,{...r,candles:r.candles.map(k=>[Math.floor(k.t/1000),+k.o.toPrecision(7),+k.h.toPrecision(7),+k.l.toPrecision(7),+k.c.toPrecision(7)])})}
  if(path=='scan'||path=='alerts'){const cur=await getOne('alerts/feed.json');let feed=cur?.data||{at:0,alerts:[]};const q=new URLSearchParams((req.url||'').split('?')[1]||'');
   if(path=='scan'||(q.get('scan')&&Date.now()-feed.at>10*60e3)){const r=await M.scan();const seen=new Set(feed.alerts.map(x=>x.id));const fresh=r.alerts.filter(x=>!seen.has(x.id));feed={at:r.at,weekend:r.weekend,scanned:r.scanned,errors:r.errors,alerts:[...fresh,...feed.alerts].filter(x=>Date.now()-x.t<24*36e5).slice(0,80)};await save('alerts/feed.json',feed);feed.new=fresh.length}
@@ -113,6 +122,14 @@ ACTIONS per step: optional {"type":"reveal","to":i} (show bars up to i; start ~3
   if(bad(text))text=b.fallback||'';return J(200,{text,verified:!!text})}
  if(path=='explain'){const b=await body(req);const r=await generateText({model:process.env.AI_MODEL||'openai/gpt-4.1-mini',system:`You are JARVIS, a veteran ICT/SMC trading coach reviewing a practice drill with Victor (paper trader). Explain in <=140 words, plain text, short bullets: what the chart showed BEFORE the decision (trend/structure, BOS/CHoCH, liquidity pools, FVGs/order blocks, premium/discount), what actually happened next and why, grade his decision (and stop/target placement), and ONE concrete lesson. Be direct and encouraging. Use only the numbers given.`,prompt:JSON.stringify(b).slice(0,9000),maxOutputTokens:400});return J(200,{text:r.text})}
  if(path=='logout'){const a=req.headers.authorization.replace(/^Bearer /,'');const b=await latest('tokens/'+h(a)+'.json');if(b)await del(b.map(x=>x.url),{token:TOK});return J(200,{ok:true})}
+ if(path.startsWith('push/')){const P='push/u/'+uid+'/',cur=await getOne(P),rec=cur?.data||{subs:[],prefs:{...N.DEF}};const b=req.method=='POST'?await body(req):{};
+  if(path=='push/subscribe'){if(!b.sub?.endpoint||!b.sub?.keys?.p256dh)return J(400,{error:'bad subscription'});rec.subs=[...(rec.subs||[]).filter(s=>s.endpoint!=b.sub.endpoint),{endpoint:b.sub.endpoint,keys:b.sub.keys,ua:String(b.ua||'').slice(0,120),at:Date.now()}].slice(-6);if(b.prefs)rec.prefs={...N.DEF,...b.prefs}}
+  else if(path=='push/unsubscribe')rec.subs=(rec.subs||[]).filter(s=>s.endpoint!=b.endpoint);
+  else if(path=='push/prefs'&&b.prefs)rec.prefs={...N.DEF,...b.prefs};
+  else if(path=='push/session')rec.session={sym:String(b.sym||'').slice(0,12),tf:/^(1m|5m|15m)$/.test(b.tf)?b.tf:'5m',on:!!b.on,at:b.on&&rec.session?.on&&rec.session.sym==b.sym?rec.session.at:Date.now(),seen:b.on?Date.now():0};
+  else if(path=='push/test'){const o=await N.send(rec,{title:'✅ JARVIS test notification',body:'Push works. Tap to open the Live tab.',tab:'live',tag:'test'});await saveV(P,rec,cur?.blobs);return J(200,o)}
+  else if(path!='push/status')return J(404,{error:'unknown'});
+  if(req.method=='POST')await saveV(P,rec,cur?.blobs);return J(200,{subs:(rec.subs||[]).length,prefs:{...N.DEF,...(rec.prefs||{})},session:rec.session||null})}
  if(path=='state'){const cur=await getOne('state/'+uid+'/');let st=cur?.data||{keys:{},ts:{}};
   if(req.method=='GET')return J(200,st);
   const P=v=>{try{return JSON.parse(v)||[]}catch{return[]}};const b=await body(req);let changed=0;const origC=st.keys.ta_chat,origT=st.keys.ta_trades,origD=st.keys.ta_tradesDel;for(const k in (b.keys||{})){const t=+(b.ts||{})[k]||0;if(!(k in st.keys)||t>(st.ts[k]||0)){st.keys[k]=b.keys[k];st.ts[k]=t;changed++}}

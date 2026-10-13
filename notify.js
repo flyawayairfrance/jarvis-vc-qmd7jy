@@ -1,0 +1,33 @@
+/* JARVIS notifications: PWA install guide (iOS), Web Push subscribe/unsubscribe, prefs, test, in-app system notifications. */
+(()=>{const API='https://trading-assistant-api-r2rdjjf2yc-4746.vercel.app/api/',$n=id=>document.getElementById(id),tk=()=>localStorage.getItem('tasync_token');
+const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform=='MacIntel'&&navigator.maxTouchPoints>1),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const LBL={live:'Live-session setups',sweeps:'Liquidity sweeps',news:'News 15 / 5 min before',stop:'Daily-stop hit',scanner:'Opportunity scanner',briefing:'Daily briefing (07:00 BKK)'};
+let reg=null,prefs=JSON.parse(localStorage.getItem('ta_notifyPrefs')||'null')||{live:true,sweeps:true,news:true,stop:true,scanner:false,briefing:true};
+const call=async(p,b)=>{const r=await fetch(API+p,{method:b?'POST':'GET',headers:{'content-type':'application/json',authorization:'Bearer '+tk()},body:b?JSON.stringify(b):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||r.status);return j};
+const b64=s=>{const p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+async function register(){if(!('serviceWorker' in navigator))return null;try{reg=await navigator.serviceWorker.register('sw.js',{scope:'./'});await navigator.serviceWorker.ready;return reg}catch(e){console.warn('sw',e);return null}}
+/* settings card */
+const host=document.querySelector('#risk .grid2');if(host){host.insertAdjacentHTML('beforeend',`<div class="card" id="ntCard"><h3>Notifications</h3><div id="ntGuide"></div><div id="ntState" class="muted" style="margin:6px 0 10px"></div>
+ <div class="nt-list">${Object.entries(LBL).map(([k,l])=>`<label class="nt-row"><span>${l}</span><input type="checkbox" data-k="${k}"${prefs[k]?' checked':''}></label>`).join('')}</div>
+ <div class="nt-btns"><button id="ntOn" class="pri">Enable push</button><button id="ntTest">Send test notification</button><button id="ntOff">Disable</button></div>
+ <p class="muted" style="font-size:12px;margin-top:8px">With the app closed, alerts are checked about every 5 min (news, scanner, briefing, daily stop, and your active Live Session symbol). While the app is open, Live alerts are instant.</p></div>`)}
+function guide(){const g=$n('ntGuide');if(!g)return;if(iOS&&!standalone){g.innerHTML=`<div class="nt-guide"><b>iPhone: install JARVIS first</b> (iOS 16.4+ only allows push for Home-Screen apps)<ol><li>Open this page in <b>Safari</b>.</li><li>Tap <b>Share</b> <span aria-hidden="true">⬆︎</span> at the bottom.</li><li>Scroll and tap <b>Add to Home Screen</b> → <b>Add</b>.</li><li>Open <b>JARVIS</b> from the Home Screen, sign in, come back here and tap <b>Enable push</b> → <b>Allow</b>.</li></ol></div>`}else if(!supported)g.innerHTML='<p class="neg">This browser does not support Web Push.</p>';else g.innerHTML=''}
+async function state(){const s=$n('ntState');if(!s)return;guide();if(!tk()){s.textContent='Sign in to enable push alerts.';return}if(!supported||(iOS&&!standalone)){s.textContent='Push not available here yet.';return}
+ const sub=reg&&await reg.pushManager.getSubscription();s.innerHTML=Notification.permission=='denied'?'<span class="neg">Notifications are blocked – allow them in system settings for this app.</span>':sub?'<span class="pos">● Push enabled on this device</span>':'Push is off on this device.'}
+async function enable(){try{if(!tk())throw new Error('sign in first');if(iOS&&!standalone)throw new Error('add JARVIS to your Home Screen first');reg=reg||await register();if(!reg)throw new Error('service worker failed');
+ const perm=await Notification.requestPermission();if(perm!='granted')throw new Error('permission '+perm);const {key}=await call('push/key');
+ let sub=await reg.pushManager.getSubscription();if(sub&&sub.options?.applicationServerKey&&btoa(String.fromCharCode(...new Uint8Array(sub.options.applicationServerKey))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')!==key){await sub.unsubscribe();sub=null}
+ sub=sub||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(key)});await call('push/subscribe',{sub:sub.toJSON(),prefs,ua:navigator.userAgent});toast('Push enabled ✓');}catch(e){toast('Push: '+e.message)}state()}
+async function disable(){try{const sub=reg&&await reg.pushManager.getSubscription();if(sub){await call('push/unsubscribe',{endpoint:sub.endpoint}).catch(()=>{});await sub.unsubscribe()}toast('Push disabled')}catch(e){toast(e.message)}state()}
+function toast(t){let el=$n('ntToast');if(!el){el=document.createElement('div');el.id='ntToast';el.className='nt-toast';document.body.appendChild(el)}el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),3500)}
+if($n('ntCard')){$n('ntOn').onclick=enable;$n('ntOff').onclick=disable;$n('ntTest').onclick=async()=>{try{const o=await call('push/test',{});toast(o.sent?`Test sent to ${o.sent} device(s)`:'No subscribed device – tap Enable push first')}catch(e){toast('Test failed: '+e.message)}};
+ $n('ntCard').querySelectorAll('input[data-k]').forEach(i=>i.onchange=()=>{prefs[i.dataset.k]=i.checked;localStorage.setItem('ta_notifyPrefs',JSON.stringify(prefs));if(tk())call('push/prefs',{prefs}).catch(()=>{})})}
+/* open tab from ?tab= or SW message */
+const go=t=>{try{t&&window.JARVIS_NAV&&JARVIS_NAV(t)}catch{}};const qt=new URLSearchParams(location.search).get('tab');if(qt)setTimeout(()=>go(qt),600);
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};if(d.type=='nav')go(d.tab);if(d.type=='push'&&document.visibilityState=='visible')toast((d.data.title||'')+' – '+(d.data.body||'').slice(0,90))});
+/* in-app: toast + system notification via SW (works on iOS PWA where `new Notification` does not) */
+async function show(title,body,tab='live',tag='live'){toast(title+(body?' – '+body.slice(0,90):''));try{if(Notification.permission=='granted'){reg=reg||await navigator.serviceWorker.getRegistration();if(reg)await reg.showNotification(title,{body,tag,renotify:true,icon:'icons/icon-192.png',badge:'icons/badge-96.png',data:{tab}})}}catch{}}
+window.JarvisNotify={show,enable,disable,toast,prefs:()=>prefs,session:(sym,tf,on)=>{if(tk())call('push/session',{sym,tf,on}).catch(()=>{})}};
+register().then(state);document.addEventListener('jarvis:tab',e=>{if(e.detail=='risk')state()})})();
