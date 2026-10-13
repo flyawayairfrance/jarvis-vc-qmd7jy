@@ -228,3 +228,12 @@ html{-webkit-tap-highlight-color:transparent}button{touch-action:manipulation}
 /* ticker: dark charcoal strip */
 #ticker{background:#141414!important;border:0!important;border-bottom:1px solid #2a2a2a!important;border-top:1px solid #1f1f1f!important;filter:none!important;-webkit-filter:none!important;color-scheme:dark;min-height:46px;overflow:hidden}
 #ticker *,#ticker iframe{filter:none!important;-webkit-filter:none!important}#ticker iframe{color-scheme:dark;background:#141414}
+/* beginner lesson player */
+.tl-svg{position:absolute;inset:8px 0;width:100%;height:calc(100% - 16px);pointer-events:none;overflow:visible}
+.tl-box{border-width:1px!important;border-style:solid;border-radius:4px;transition:opacity .6s}.tl-box.old{opacity:.25}.tl-box span{font-size:10px!important;top:-14px!important;font-weight:600;text-shadow:0 1px 2px #000}
+.tl-pulse{fill:rgba(255,211,77,.25);stroke:#ffd34d;stroke-width:2;transform-box:fill-box;transform-origin:center;animation:tlPulse 1.3s ease-in-out infinite}
+@keyframes tlPulse{0%{transform:scale(.7);opacity:1}100%{transform:scale(2.4);opacity:0}}
+.tl-draw{stroke-dasharray:400;stroke-dashoffset:400;animation:tlDraw .9s ease-out forwards}@keyframes tlDraw{to{stroke-dashoffset:0}}
+.tl-arrow{animation:tlFade .4s ease-out}@keyframes tlFade{from{opacity:0}to{opacity:1}}
+.tl-say{font-size:15px;line-height:1.55;min-height:3.2em}.tl-bar{height:3px;background:#222;border-radius:2px;margin:6px 0 2px;overflow:hidden}.tl-bar i{display:block;height:100%;width:0;background:#ffd34d}
+.ac-path ol{margin:6px 0 0;padding-left:20px}.ac-path li{margin:4px 0}.ac-path button{width:100%;text-align:left}
