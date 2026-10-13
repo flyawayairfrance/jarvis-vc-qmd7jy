@@ -14,5 +14,6 @@ window.JarvisTools={
  open_chart:g=>{const el=document.getElementById('chart');const sym=g.symbol||'OANDA:XAUUSD';setTimeout(()=>{if(el){el.dataset.on='';el.innerHTML='';tv('#chart','advanced-chart',{autosize:true,symbol:sym,interval:g.interval||'15',timezone:TZ,style:'1',allow_symbol_change:true,withdateranges:true})}},500);return{desc:`Opening ${sym} chart (${g.interval||'15'})`,tab:'market',selector:'#chart'}},
  start_drill:g=>{setTimeout(()=>window.JarvisAcademy&&JarvisAcademy.mode(g.mode||'predict'),300);return{desc:`Starting ${g.mode||'predict'} drill`,tab:'academy',selector:'#acModes'}},
  open_lesson:g=>{setTimeout(()=>window.JarvisAcademy&&JarvisAcademy.lesson(g.id),300);return{desc:'Opening lesson',tab:'academy',selector:'#acBody'}},
+ start_live_session:g=>{setTimeout(()=>window.JarvisLive&&JarvisLive.start(g.symbol,g.timeframe),300);return{desc:`Starting a live session${g.symbol?' on '+g.symbol:''} – I’ll stream setups and risk cues`,tab:'live',selector:'#lvGo'}},
  teach:g=>{window.__acBusy=1;setTimeout(()=>{if(typeof window.JARVIS_LESSON=='function')window.JARVIS_LESSON(g.topic,g.symbol);else if(window.JarvisAcademy)JarvisAcademy.teach(g.topic,g.symbol)},200);return{desc:`Building a live lesson: ${g.topic}`,tab:'academy',selector:'#acBody'}}};
 })();
