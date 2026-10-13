@@ -126,10 +126,10 @@ ACTIONS per step: optional {"type":"reveal","to":i} (show bars up to i; start ~3
   if(path=='push/subscribe'){if(!b.sub?.endpoint||!b.sub?.keys?.p256dh)return J(400,{error:'bad subscription'});rec.subs=[...(rec.subs||[]).filter(s=>s.endpoint!=b.sub.endpoint),{endpoint:b.sub.endpoint,keys:b.sub.keys,ua:String(b.ua||'').slice(0,120),at:Date.now()}].slice(-6);if(b.prefs)rec.prefs={...N.DEF,...b.prefs}}
   else if(path=='push/unsubscribe')rec.subs=(rec.subs||[]).filter(s=>s.endpoint!=b.endpoint);
   else if(path=='push/prefs'&&b.prefs)rec.prefs={...N.DEF,...b.prefs};
-  else if(path=='push/session')rec.session={sym:String(b.sym||'').slice(0,12),tf:/^(1m|5m|15m)$/.test(b.tf)?b.tf:'5m',on:!!b.on,at:b.on&&rec.session?.on&&rec.session.sym==b.sym?rec.session.at:Date.now(),seen:b.on?Date.now():0};
-  else if(path=='push/test'){const o=await N.send(rec,{title:'✅ JARVIS test notification',body:'Push works. Tap to open the Live tab.',tab:'live',tag:'test'});await saveV(P,rec,cur?.blobs);return J(200,o)}
+  else if(path=='push/session')rec.session={sym:String(b.sym||'').slice(0,12),tf:/^(1m|5m|15m)$/.test(b.tf)?b.tf:'5m',on:!!b.on,at:b.on&&rec.session?.on&&rec.session.sym==b.sym?rec.session.at:Date.now(),seen:b.on?Date.now():0,visible:b.visible!==false};
+  else if(path=='push/test'){const o=await N.send(rec,{title:'✅ JARVIS test notification',body:'Push works. Tap to open the Live tab.',tab:'live',tag:'test'});rec.lastTest=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Bangkok'})+' BKK: '+o.summary;o.summary=rec.lastTest;await saveV(P,rec,cur?.blobs);return J(200,o)}
   else if(path!='push/status')return J(404,{error:'unknown'});
-  if(req.method=='POST')await saveV(P,rec,cur?.blobs);return J(200,{subs:(rec.subs||[]).length,prefs:{...N.DEF,...(rec.prefs||{})},session:rec.session||null})}
+  if(req.method=='POST')await saveV(P,rec,cur?.blobs);return J(200,{devices:(rec.subs||[]).map(d=>({endpoint:d.endpoint,host:(()=>{try{return new URL(d.endpoint).host}catch{return''}})(),ua:d.ua,at:d.at,last:d.last})),lastTest:rec.lastTest||'',subs:(rec.subs||[]).length,prefs:{...N.DEF,...(rec.prefs||{})},session:rec.session||null})}
  if(path=='state'){const cur=await getOne('state/'+uid+'/');let st=cur?.data||{keys:{},ts:{}};
   if(req.method=='GET')return J(200,st);
   const P=v=>{try{return JSON.parse(v)||[]}catch{return[]}};const b=await body(req);let changed=0;const origC=st.keys.ta_chat,origT=st.keys.ta_trades,origD=st.keys.ta_tradesDel;for(const k in (b.keys||{})){const t=+(b.ts||{})[k]||0;if(!(k in st.keys)||t>(st.ts[k]||0)){st.keys[k]=b.keys[k];st.ts[k]=t;changed++}}
