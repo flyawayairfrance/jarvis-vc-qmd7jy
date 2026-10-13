@@ -1,7 +1,7 @@
 const UA={'user-agent':'Mozilla/5.0 (JarvisBot)'};
 const ALIAS={NQ:'NQ=F',NAS100:'NQ=F',NASDAQ:'NQ=F',US100:'NQ=F',ES:'ES=F',SPX:'ES=F',SP500:'ES=F',US500:'ES=F',YM:'YM=F',DOW:'YM=F',US30:'YM=F',RTY:'RTY=F',DAX:'^GDAXI',GER40:'^GDAXI',DE40:'^GDAXI',NIKKEI:'^N225',JP225:'^N225',FTSE:'^FTSE',UK100:'^FTSE',GOLD:'GC=F',GC:'GC=F',MGC:'GC=F',SI:'SI=F',CL:'CL=F',MNQ:'NQ=F',MES:'ES=F',XAUUSD:'GC=F',XAU:'GC=F',SILVER:'SI=F',XAGUSD:'SI=F',OIL:'CL=F',WTI:'CL=F',USOIL:'CL=F',DXY:'DX-Y.NYB',VIX:'^VIX'};
 const CRYPTO=/^(BTC|ETH|SOL|BNB|XRP|DOGE|ADA|AVAX|LINK|LTC)(USDT?|)$/;
-export function resolve(sym){let s=String(sym||'').toUpperCase().replace(/^[A-Z]+:/,'').replace(/[\s/]/g,'').replace(/1!$/,'');
+export function resolve(sym){const parts=String(sym||'').toUpperCase().split(/[\/,|]|\s+OR\s+/).map(x=>x.trim().replace(/^[A-Z]+:/,'')).filter(Boolean);const hit=parts.find(x=>ALIAS[x]);if(hit)sym=hit;let s=String(sym||'').toUpperCase().replace(/^[A-Z]+:/,'').replace(/[\s/]/g,'').replace(/1!$/,'');
  if(ALIAS[s])return{src:'yahoo',id:ALIAS[s],name:s};const c=s.match(CRYPTO);if(c)return{src:'binance',id:c[1]+'USDT',name:c[1]+'USD'};
  if(/^[A-Z]{6}$/.test(s)&&/^(EUR|USD|GBP|JPY|AUD|NZD|CAD|CHF)/.test(s))return{src:'yahoo',id:s+'=X',name:s};return{src:'yahoo',id:s,name:s}}
 const YI={'1m':['1m','1d'],'5m':['5m','5d'],'15m':['15m','5d'],'30m':['30m','1mo'],'1h':['60m','1mo'],'4h':['60m','3mo'],'1d':['1d','1y']};
