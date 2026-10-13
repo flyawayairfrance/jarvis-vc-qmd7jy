@@ -1,0 +1,21 @@
+/* JARVIS intelligence client: opportunity alerts, news reports, daily briefing. Exposes window.JARVIS for the UI layer. */
+(()=>{const API='https://trading-assistant-api-r2rdjjf2yc-4746.vercel.app/api',L=(k,d)=>{try{return JSON.parse(localStorage.getItem('ta_'+k))??d}catch{return d}},W=(k,v)=>localStorage.setItem('ta_'+k,JSON.stringify(v));
+const J=window.JARVIS=Object.assign(window.JARVIS||{},{alerts:[],reports:[],briefing:null,listeners:[],on(f){this.listeners.push(f)}});const emit=()=>{J.listeners.forEach(f=>{try{f(J)}catch{}});render();document.dispatchEvent(new CustomEvent('jarvis:update',{detail:J}))};
+const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function notify(title,body){try{if(window.Notification&&Notification.permission=='granted')new Notification(title,{body:body.slice(0,180)})}catch{}const b=document.getElementById('banner');if(b){b.className='warn';b.textContent='🛰 '+title+': '+body.slice(0,160);clearTimeout(notify.t);notify.t=setTimeout(()=>b.className='hidden',15000)}}
+async function poll(){const seen=new Set(L('seenIntel',[]));let fresh=[];
+ try{const a=await (await fetch(API+'/alerts?scan=1')).json();J.alerts=a.alerts||[];J.alertsAt=a.at;fresh.push(...J.alerts.filter(x=>!seen.has(x.id)).map(x=>[x.kind=='news'?'News ahead':'Opportunity '+(x.symbol||''),x.text,x.id]))}catch{}
+ try{const r=await (await fetch(API+'/reports?gen=1')).json();J.reports=r.reports||[];J.briefing=r.briefing;J.date=r.date;fresh.push(...J.reports.filter(x=>!seen.has(x.id)).map(x=>['Jarvis report',x.title,x.id]));if(r.briefing&&!seen.has('brief'+r.date))fresh.push(['Pre-session briefing ready',r.briefing.text.split('\n')[0],'brief'+r.date])}catch{}
+ const first=!L('seenIntel',null);fresh.forEach(f=>seen.add(f[2]));W('seenIntel',[...seen].slice(-400));if(!first)fresh.slice(0,3).forEach(f=>notify(f[0],f[1]));emit()}
+async function briefing(){try{const r=await (await fetch(API+'/briefing')).json();J.briefing=r.briefing;J.reports=r.reports||J.reports;emit()}catch{}}J.refresh=poll;J.loadBriefing=briefing;
+const sec=(t,k)=>{const m=t.match(new RegExp(k+'\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*[A-Z/ ]{3,12}:|$)','i'));return m?m[1].trim().replace(/\s+/g,' '):''};
+const ASSETS=['NQ','ES','YM','DAX','Gold','XAUUSD','Oil','EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD','DXY','USD','EUR','GBP','JPY','BTC','ETH','Nasdaq','S&P','Treasuries','Stocks','AAPL','NVDA','TSLA','MSFT'];
+function render(){const fmt=t=>new Date(t).toLocaleString('en-GB',{timeZone:'Asia/Bangkok',weekday:'short',hour:'2-digit',minute:'2-digit'})+' BKK';
+ if(J.renderNewsReports)J.renderNewsReports(J.reports.slice(0,10).map(r=>{const t=r.report||'',imp=sec(t,'IMPACT'),vol=/high/i.test(imp)?'high':/med/i.test(imp)?'med':r.kind=='event'?'high':'med';
+  return{headline:r.title,impact:vol,assets:ASSETS.filter(x=>new RegExp('\\b'+x.replace('&','\\&')+'\\b','i').test(imp)).slice(0,6),watch:[sec(t,'WATCH/DO')||sec(t,'WATCH'),sec(t,'RISK')&&'Risk: '+sec(t,'RISK')].filter(Boolean).join(' — ')||t.slice(0,300),time:fmt(r.t),source:r.kind=='event'?'Economic calendar':'Headline'}}));
+ if(J.renderDailyBriefing){const b=J.briefing;if(b){const ls=b.text.split('\n').map(x=>x.trim()).filter(Boolean),pts=ls.filter(x=>/^([-•*]|\d+[.)])/.test(x)).map(x=>x.replace(/^([-•*]|\d+[.)])\s*/,'').replace(/\*\*/g,''));const bl=ls.find(x=>/bias/i.test(x));
+  J.renderDailyBriefing({title:'Pre-session briefing',date:J.date,summary:ls.filter(x=>!/^([-•*]|\d+[.)])/.test(x)&&x!==bl).slice(0,2).join(' ').replace(/[#*]/g,''),points:pts.slice(0,12),bias:bl?bl.replace(/[#*]/g,'').slice(0,80):undefined})}
+  else{J.renderDailyBriefing(null);const box=document.getElementById('dailyBriefingBody');if(box&&!document.getElementById('jvBrief')){const btn=document.createElement('button');btn.id='jvBrief';btn.textContent="Generate today's briefing";btn.onclick=()=>{btn.textContent='Generating…';btn.disabled=true;briefing()};box.appendChild(btn)}}}
+ const fd=document.getElementById('jvAlerts');if(fd){let o=document.getElementById('jvOpps');if(!o){o=document.createElement('div');o.id='jvOpps';fd.after(o)}
+  o.innerHTML=J.alerts.slice(0,8).map(a=>`<div class="jv-al ${a.kind=='news'?'warn':'info'}"><b>${e(a.symbol||'')}</b> ${e(a.text)}</div>`).join('')}}
+poll();setInterval(poll,10*60e3)})();
