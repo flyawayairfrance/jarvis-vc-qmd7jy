@@ -1,6 +1,14 @@
 /* JarvisTools: generic client-side actions the AI can call. Each returns {desc, tab, selector} so Follow mode navigates there. */
 (()=>{const up=s=>String(s||'').toUpperCase().trim(),bk=v=>v?Date.parse(v.length<=16?v+':00+07:00':v):Date.now();
 window.JarvisTools={
+ notifications_on:g=>{const N=window.JarvisNotify;if(!N)return{desc:'Notifications unavailable'};const st=N.status();
+  if('Notification' in window&&Notification.permission=='granted'){N.enable(Promise.resolve('granted'));return{desc:'Turning notifications on for this device…',tab:'risk',selector:'#ntCard'}}
+  setTimeout(()=>{const c=document.getElementById('chat');if(!c)return;const d=document.createElement('div');d.className='nt-chatcta';d.innerHTML=Notification.permission=='denied'?'<span>Your browser has blocked notifications. Open the status sheet next to the Notifications switch for how to re-allow them.</span>':'<span>Your browser needs one tap from you:</span><button class="pri">Allow notifications</button>';const b=d.querySelector('button');if(b)b.onclick=()=>{N.enableClick(false);b.textContent='Requested…';b.disabled=true};c.appendChild(d);c.scrollTop=c.scrollHeight},500);
+  return{desc:'Tap “Allow notifications” below to finish turning them on',tab:'chat',selector:'#chat'}},
+ notifications_off:g=>{window.JarvisNotify?.disable();return{desc:'Notifications turned off on this device',tab:'risk',selector:'#ntCard'}},
+ send_test_notification:g=>{window.JarvisNotify?.test();return{desc:'Sending a test notification to all your devices',tab:'risk',selector:'#ntCard'}},
+ set_alert_toggles:g=>{const p=window.JarvisNotify?.setPrefs(g)||{};const L=window.JarvisNotify?.LBL||{};return{desc:'Alerts: '+Object.keys(L).map(k=>`${L[k]} ${p[k]?'on':'off'}`).join(', '),tab:'risk',selector:'#ntCard'}},
+ notification_status:g=>{const s=window.JarvisNotify?.status()||{};window.JarvisNotify?.refresh();return{desc:`Notifications ${s.on?'ON':'OFF'} – permission ${s.perm}, this device subscribed ${s.sub?'yes':'no'}${s.host?' ('+s.host+')':''}, ${s.devices||0} device(s), last test: ${s.last||'none'}`,tab:'risk',selector:'#ntCard'}},
  navigate:g=>({desc:g.message||('Showing '+g.tab),tab:g.tab,selector:g.selector}),
  journal_add:g=>{const pnl=+g.pnl||0,id='j'+Date.now();trades.push({id,sym:up(g.symbol)||'?',side:g.side||'Long',t:bk(g.datetime),pnl,r:g.r!=null?+g.r:+(pnl/(S.acct*S.risk/100)).toFixed(2),note:g.note||'',entry:g.entry??NaN,stop:g.stop??NaN,exit:g.exit??NaN,qty:g.qty??NaN});LS.s('trades',trades);renderJournal();
   return{desc:`Logged ${g.side||'Long'} ${up(g.symbol)} ${pnl>=0?'+':''}${pnl}$ in the journal`,tab:'journal',selector:'#trades tr'}},

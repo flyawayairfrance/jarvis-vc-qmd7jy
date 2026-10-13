@@ -261,3 +261,15 @@ html{-webkit-tap-highlight-color:transparent}button{touch-action:manipulation}
 .nt-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.nt-guide{border:1px solid #fff3;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:8px}.nt-guide ol{margin:6px 0 0 18px;padding:0}
 .nt-toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);max-width:min(92vw,460px);background:#1a1a1a;border:1px solid #fff3;color:#eee;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:9999}.nt-toast.on{opacity:1;transform:translate(-50%,0)}
 .nt-st{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px}.nt-st span{color:var(--mu)}.nt-st b{font-weight:600;overflow-wrap:anywhere}
+.nt-h{position:relative;display:flex;align-items:center;gap:2px}
+.nt-tgl{display:inline-flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:999px;border:1px solid #3a3a3a;background:transparent;color:#8a8a8a;font-size:12px;cursor:pointer;white-space:nowrap}
+.nt-tgl b{font-weight:700;letter-spacing:.04em}.nt-sw{position:relative;width:30px;height:18px;border-radius:999px;background:#2a2a2a;border:1px solid #555;transition:.2s;flex:none}
+.nt-sw i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#888;transition:.2s}
+.nt-tgl.on{color:#000;background:#fff;border-color:#fff}.nt-tgl.on .nt-sw{background:#000;border-color:#000}.nt-tgl.on .nt-sw i{left:14px;background:#fff}
+.nt-info{background:none;border:0;color:#888;padding:4px 6px;cursor:pointer;font-size:12px}
+.nt-sheet{position:absolute;top:calc(100% + 8px);right:0;width:min(320px,92vw);background:#0e0e0e;border:1px solid #333;border-radius:12px;padding:12px;z-index:1000;box-shadow:0 10px 30px #000a;font-size:12px;line-height:1.45}
+.nt-sheet p{margin:8px 0 0}.nt-sheet .nt-btns button{font-size:12px;padding:6px 10px}
+.nt-chatcta{display:flex;gap:8px;align-items:center;margin:6px 0;padding:10px 12px;border:1px solid #fff4;border-radius:12px;font-size:13px}
+@media(max-width:600px){.nt-w{display:none}.nt-tgl{padding:4px 8px 4px 5px}.nt-sheet{position:fixed;top:60px;right:4vw;left:4vw;width:auto}}
+header .nt-tgl.on,.nt-tgl.on{background:#fff!important;color:#000!important;border-color:#fff!important}header .nt-tgl.on .nt-sw{background:#000!important;border-color:#000!important}header .nt-tgl.on .nt-sw i{left:14px!important;background:#fff!important}
+header .nt-tgl:not(.on){background:transparent!important;color:#8a8a8a!important}
