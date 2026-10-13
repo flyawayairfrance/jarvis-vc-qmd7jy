@@ -1,5 +1,5 @@
 const UA={'user-agent':'Mozilla/5.0 (JarvisBot)'};
-const ALIAS={NQ:'NQ=F',NAS100:'NQ=F',NASDAQ:'NQ=F',US100:'NQ=F',ES:'ES=F',SPX:'ES=F',SP500:'ES=F',US500:'ES=F',YM:'YM=F',DOW:'YM=F',US30:'YM=F',RTY:'RTY=F',DAX:'^GDAXI',GER40:'^GDAXI',DE40:'^GDAXI',NIKKEI:'^N225',JP225:'^N225',FTSE:'^FTSE',UK100:'^FTSE',GOLD:'GC=F',XAUUSD:'GC=F',XAU:'GC=F',SILVER:'SI=F',XAGUSD:'SI=F',OIL:'CL=F',WTI:'CL=F',USOIL:'CL=F',DXY:'DX-Y.NYB',VIX:'^VIX'};
+const ALIAS={NQ:'NQ=F',NAS100:'NQ=F',NASDAQ:'NQ=F',US100:'NQ=F',ES:'ES=F',SPX:'ES=F',SP500:'ES=F',US500:'ES=F',YM:'YM=F',DOW:'YM=F',US30:'YM=F',RTY:'RTY=F',DAX:'^GDAXI',GER40:'^GDAXI',DE40:'^GDAXI',NIKKEI:'^N225',JP225:'^N225',FTSE:'^FTSE',UK100:'^FTSE',GOLD:'GC=F',GC:'GC=F',MGC:'GC=F',SI:'SI=F',CL:'CL=F',MNQ:'NQ=F',MES:'ES=F',XAUUSD:'GC=F',XAU:'GC=F',SILVER:'SI=F',XAGUSD:'SI=F',OIL:'CL=F',WTI:'CL=F',USOIL:'CL=F',DXY:'DX-Y.NYB',VIX:'^VIX'};
 const CRYPTO=/^(BTC|ETH|SOL|BNB|XRP|DOGE|ADA|AVAX|LINK|LTC)(USDT?|)$/;
 export function resolve(sym){let s=String(sym||'').toUpperCase().replace(/^[A-Z]+:/,'').replace(/[\s/]/g,'').replace(/1!$/,'');
  if(ALIAS[s])return{src:'yahoo',id:ALIAS[s],name:s};const c=s.match(CRYPTO);if(c)return{src:'binance',id:c[1]+'USDT',name:c[1]+'USD'};
@@ -7,7 +7,7 @@ export function resolve(sym){let s=String(sym||'').toUpperCase().replace(/^[A-Z]
 const YI={'1m':['1m','1d'],'5m':['5m','5d'],'15m':['15m','5d'],'30m':['30m','1mo'],'1h':['60m','1mo'],'4h':['60m','3mo'],'1d':['1d','1y']};
 export async function candles(sym,tf='1h',n=200){const r=resolve(sym);tf=YI[tf]?tf:'1h';let c=[];
  if(r.src=='binance'){const j=await (await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${r.id}&interval=${tf}&limit=${Math.min(n,500)}`)).json();c=j.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}))}
- else{const [iv,rg]=YI[tf];const j=await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(r.id)}?interval=${iv}&range=${rg}`,{headers:UA})).json();const x=j?.chart?.result?.[0];if(!x)throw new Error('No data for '+sym);const q=x.indicators.quote[0];
+ else{const [iv,rg]=YI[tf];let x;for(const hst of['query1','query2']){try{const j=await (await fetch(`https://${hst}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(r.id)}?interval=${iv}&range=${rg}`,{headers:UA})).json();x=j?.chart?.result?.[0];if(x?.timestamp)break}catch{}}if(!x?.timestamp)throw new Error('No data for '+sym);const q=x.indicators.quote[0];
   c=x.timestamp.map((t,i)=>({t:t*1000,o:q.open[i],h:q.high[i],l:q.low[i],c:q.close[i],v:q.volume[i]})).filter(k=>k.c!=null&&k.h!=null);
   if(tf=='4h'){const g=[];for(const k of c){const b=Math.floor(k.t/144e5)*144e5,l=g[g.length-1];if(l&&l.t==b){l.h=Math.max(l.h,k.h);l.l=Math.min(l.l,k.l);l.c=k.c;l.v+=k.v||0}else g.push({...k,t:b})}c=g}}
  return{symbol:r.name,source:r.src,tf,candles:c.slice(-n)}}
