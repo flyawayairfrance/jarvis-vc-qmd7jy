@@ -5,9 +5,9 @@ export function resolve(sym){const parts=String(sym||'').toUpperCase().split(/[\
  if(ALIAS[s])return{src:'yahoo',id:ALIAS[s],name:s};const c=s.match(CRYPTO);if(c)return{src:'binance',id:c[1]+'USDT',name:c[1]+'USD'};
  if(/^[A-Z]{6}$/.test(s)&&/^(EUR|USD|GBP|JPY|AUD|NZD|CAD|CHF)/.test(s))return{src:'yahoo',id:s+'=X',name:s};return{src:'yahoo',id:s,name:s}}
 const YI={'1m':['1m','1d'],'5m':['5m','5d'],'15m':['15m','5d'],'30m':['30m','1mo'],'1h':['60m','1mo'],'4h':['60m','3mo'],'1d':['1d','1y']};
-export async function candles(sym,tf='1h',n=200){const r=resolve(sym);tf=YI[tf]?tf:'1h';let c=[];
- if(r.src=='binance'){const j=await (await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${r.id}&interval=${tf}&limit=${Math.min(n,500)}`)).json();c=j.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}))}
- else{const [iv,rg]=YI[tf];let x;for(const hst of['query1','query2']){try{const j=await (await fetch(`https://${hst}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(r.id)}?interval=${iv}&range=${rg}`,{headers:UA})).json();x=j?.chart?.result?.[0];if(x?.timestamp)break}catch{}}if(!x?.timestamp)throw new Error('No data for '+sym);const q=x.indicators.quote[0];
+export async function candles(sym,tf='1h',n=200,at=0){const r=resolve(sym);tf=YI[tf]?tf:'1h';let c=[];const span={'5m':3e5,'15m':9e5,'30m':18e5,'1h':36e5,'4h':144e5,'1d':864e5}[tf]||36e5;
+ if(r.src=='binance'){const j=await (await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${r.id}&interval=${tf}&limit=${Math.min(n,1000)}${at?`&endTime=${at+span*Math.floor(n/3)}`:''}`)).json();c=j.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}))}
+ else{const [iv,rg]=YI[tf];let x;for(const hst of['query1','query2']){try{const j=await (await fetch(`https://${hst}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(r.id)}?interval=${iv}&${at?`period1=${Math.floor((at-span*n*0.7)/1000)}&period2=${Math.floor((at+span*n*0.3)/1000)}`:'range='+(n>400&&tf=='1h'?'3mo':n>400&&tf=='15m'?'1mo':rg)}`,{headers:UA})).json();x=j?.chart?.result?.[0];if(x?.timestamp)break}catch{}}if(!x?.timestamp)throw new Error('No data for '+sym);const q=x.indicators.quote[0];
   c=x.timestamp.map((t,i)=>({t:t*1000,o:q.open[i],h:q.high[i],l:q.low[i],c:q.close[i],v:q.volume[i]})).filter(k=>k.c!=null&&k.h!=null);
   if(tf=='4h'){const g=[];for(const k of c){const b=Math.floor(k.t/144e5)*144e5,l=g[g.length-1];if(l&&l.t==b){l.h=Math.max(l.h,k.h);l.l=Math.min(l.l,k.l);l.c=k.c;l.v+=k.v||0}else g.push({...k,t:b})}c=g}}
  return{symbol:r.name,source:r.src,tf,candles:c.slice(-n)}}
