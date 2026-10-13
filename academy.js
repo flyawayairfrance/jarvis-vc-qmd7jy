@@ -105,10 +105,16 @@ async function teach(topic,symbol){window.__acBusy=1;started=true;document.query
  function draw(){ov.innerHTML=boxes.map(x=>{const x1=tx(x.from),x2=tx(Math.max(x.to??x.from,x.from)),y1=py(x.top),y2=py(x.bottom);if(x1==null||y1==null||y2==null)return'';const k=col[x.color]||col.blue,w=Math.max(10,(x2??x1)-x1+10);
    return`<div class="tl-box${x.old?' old':''}" style="left:${x1-5}px;top:${Math.min(y1,y2)}px;width:${w}px;height:${Math.max(4,Math.abs(y2-y1))}px;background:rgba(${k},.10);border-color:rgba(${k},.55)"><span style="color:rgb(${k})">${E(x.label||'')}</span></div>`}).join('');
   const W=svg.clientWidth,H=svg.clientHeight;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.innerHTML=`<defs><marker id="tlHead" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ffd34d"/></marker></defs>`+arrows.map(a=>{const x=tx(a.i);const k=c[cl(a.i)];const tp=a.price!=null?+a.price:(a.dir=='down'?k[2]:k[3]);const y=py(tp);if(x==null||y==null)return'';
-   const up=a.dir!='down',sx=Math.max(70,Math.min(W-70,x+(x>W*.6?-70:70))),sy=up?Math.min(H-24,y+75):Math.max(24,y-75),ty=up?y+12:y-12,mx=(sx+x)/2+(x>W*.6?20:-20),my=(sy+ty)/2;
-   const lbl=E(a.text||''),lw=Math.min(190,Math.max(60,lbl.length*6.6+16)),lx=Math.max(4,Math.min(W-lw-4,sx-lw/2)),ly=up?Math.min(H-26,sy+4):Math.max(2,sy-24);
-   return`<g class="tl-arrow"><circle cx="${x}" cy="${y}" r="9" class="tl-pulse"/><circle cx="${x}" cy="${y}" r="4" fill="#ffd34d"/><path d="M${sx},${sy} Q${mx},${my} ${x},${ty}" fill="none" stroke="#ffd34d" stroke-width="3" stroke-linecap="round" marker-end="url(#tlHead)" class="tl-draw"/>
+  svg.innerHTML=`<defs><marker id="tlHead" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3.5 L0,7 z" fill="#ffd34d"/></marker></defs>`+arrows.map(a=>{const x=tx(a.i),k=c[cl(a.i)];if(x==null)return'';
+   const yh=py(k[2]),yl=py(k[3]);if(yh==null||yl==null)return'';let fromAbove=a.dir=='down';if(a.price!=null){fromAbove=+a.price>=(k[2]+k[3])/2}const y=fromAbove?yh:yl;
+   // candle extents near a pixel column range
+   const near=(x0,x1)=>{let top=1e9,bot=-1e9;for(let j=0;j<=shown;j++){const xx=tx(j);if(xx==null||xx<x0||xx>x1)continue;top=Math.min(top,py(c[j][2]));bot=Math.max(bot,py(c[j][3]))}return[top,bot]};
+   const lbl=E(a.text||''),lw=Math.min(190,Math.max(60,(a.text||'').length*6.6+16)),side=x>W*.6?-1:1;
+   let lx=Math.max(4,Math.min(W-lw-4,x+side*40-(side<0?lw:0)));const [nt,nb]=near(lx-6,lx+lw+6);
+   let ly=fromAbove?Math.min(nt,y)-48:Math.max(nb,y)+26;if(ly<2||ly>H-24){fromAbove=!fromAbove;ly=fromAbove?Math.min(nt,y)-48:Math.max(nb,y)+26}ly=Math.max(2,Math.min(H-24,ly));
+   const sx=lx+lw/2,sy=fromAbove?ly+22:ly,dx=x-sx,dy=y-sy,d=Math.hypot(dx,dy)||1,ex=x-dx/d*16,ey=y-dy/d*16,mx=(sx+ex)/2+side*-14,my=(sy+ey)/2;
+   return`<g class="tl-arrow"><path d="M${sx},${sy} Q${mx},${my} ${ex},${ey}" fill="none" stroke="#ffd34d" stroke-width="2" stroke-linecap="round" marker-end="url(#tlHead)" class="tl-draw"/>
+    <circle cx="${x}" cy="${y}" r="7" class="tl-pulse"/>
     ${lbl?`<rect x="${lx}" y="${ly}" width="${lw}" height="22" rx="6" fill="#0a0a0a" stroke="#ffd34d" stroke-width="1"/><text x="${lx+lw/2}" y="${ly+15}" text-anchor="middle" fill="#fff" font-size="12">${lbl}</text>`:''}</g>`}).join('')}
  chart.timeScale().subscribeVisibleLogicalRangeChange(()=>requestAnimationFrame(draw));new ResizeObserver(()=>requestAnimationFrame(draw)).observe(ov);
  const sleep=async ms=>{const t=tok;await wait(ms);return t===tok};const focusOn=to=>chart.timeScale().setVisibleLogicalRange({from:Math.max(0,to-45),to:to+4});
