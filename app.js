@@ -28,30 +28,10 @@ let day=bkDate(new Date());
 const plan=()=>plans[day]||(plans[day]=propose(day),LS.s('plans',plans),plans[day]);
 function learn(b){if(!b.key)return;const p0=propose0(b.key);if(!p0)return;prefs[b.key]={...(prefs[b.key]||{}),shift:b.s-p0.s,dur:b.e-b.s};LS.s('prefs',prefs)}
 function propose0(key){const ss=sessions(day),g=k=>ss.find(x=>x.k==k).s;return{tokyo:{s:g('tokyo')},london:{s:g('london')},cash:{s:g('cash')-30}}[key]}
-const PX=40/60;
-function renderPlan(){$('#day').value=day;const tl=$('#timeline');tl.innerHTML='';
- for(let h=0;h<24;h++)tl.insertAdjacentHTML('beforeend',`<div class="hr" style="top:${h*40}px">${pad(h)}:00</div>`);
- sessions(day).forEach((s,i)=>{const a=Math.max(0,s.s),z=Math.min(1440,s.e);if(z>a&&!isWeekend(day))tl.insertAdjacentHTML('beforeend',`<div class="mkt" title="${s.n}" style="top:${a*PX}px;height:${(z-a)*PX}px;background:${s.c};left:${2+i*5}px;width:5px"></div>`)});
- dayEvents(day).forEach(e=>tl.insertAdjacentHTML('beforeend',`<div class="ev" style="top:${e.m*PX}px">${fmtM(e.m)} ${e.country||''} ${e.title}</div>`));
- if(day==bkDate(new Date()))tl.insertAdjacentHTML('beforeend',`<div class="now" style="top:${bkMin(new Date())*PX}px"></div>`);
- plan().forEach(b=>{const el=document.createElement('div');el.className='blk';el.style.top=b.s*PX+'px';el.style.height=Math.max(18,(b.e-b.s)*PX)+'px';el.textContent=`${fmtM(b.s)}–${fmtM(b.e)} ${b.title}`;drag(el,b);tl.appendChild(el)});
- const ss=sessions(day);$('#dayNote').textContent=isWeekend(day)?'Weekend: markets closed, no crypto on weekends – rest & review.':ss.map(s=>`${s.n} ${fmtM(s.s)}–${fmtM(s.e)}`).join(' · ')+' (Bangkok)';
- $('#blocks').innerHTML=plan().map(b=>`<div class="bk" data-id="${b.id}"><div class="row"><input data-f="title" value="${esc(b.title)}"><button data-del>✕</button></div>
- <div class="row"><input type="time" data-f="s" value="${fmtM(b.s)}"><input type="time" data-f="e" value="${fmtM(b.e)}"></div>${b.note?`<div class="neg">${esc(b.note)}</div>`:''}${b.symbol?`<div>📈 <b>${esc(b.symbol)}</b></div>`:''}${b.prepNotes?`<div class="muted">🧭 Prep: ${esc(b.prepNotes)}</div>`:''}
- <div class="row"><input type="number" data-g="pnl" value="${b.goal.pnl}" title="P&L target $"><input type="number" data-g="trades" value="${b.goal.trades}" title="Max trades"></div><input data-g="process" value="${esc(b.goal.process)}" style="width:100%">
- <textarea data-f="review" placeholder="End-of-session review: grade, what worked, lesson" style="width:100%;margin-top:6px">${esc(b.review||'')}</textarea></div>`).join('')||'<p class="muted">No blocks. Tap “Assistant: propose” or “+ Block”.</p>';
- renderChecklist()}
+function renderPlan(){window.calRender&&calRender();renderChecklist()}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function save(){LS.s('plans',plans)}
-$('#blocks').addEventListener('change',e=>{const card=e.target.closest('.bk');if(!card)return;const b=plan().find(x=>x.id==card.dataset.id);const f=e.target.dataset.f,g=e.target.dataset.g;
- if(f=='s'||f=='e'){const[h,m]=e.target.value.split(':');b[f]=+h*60+ +m;if(b.e<=b.s)b.e=b.s+30;learn(b)}else if(f)b[f]=e.target.value;if(g)b.goal[g]=g=='process'?e.target.value:+e.target.value;save();if(f=='s'||f=='e')renderPlan()});
-$('#blocks').addEventListener('click',e=>{if(!e.target.hasAttribute('data-del'))return;const id=e.target.closest('.bk').dataset.id;const b=plan().find(x=>x.id==id);if(b.key){prefs[b.key]={...(prefs[b.key]||{}),del:((prefs[b.key]||{}).del||0)+1};LS.s('prefs',prefs)}plans[day]=plan().filter(x=>x.id!=id);save();renderPlan()});
-function drag(el,b){let y0,s0;el.addEventListener('pointerdown',e=>{y0=e.clientY;s0=b.s;el.setPointerCapture(e.pointerId)});el.addEventListener('pointermove',e=>{if(y0==null)return;let d=Math.round((e.clientY-y0)/PX/15)*15;const dur=b.e-b.s;b.s=Math.min(1440-dur,Math.max(0,s0+d));b.e=b.s+dur;el.style.top=b.s*PX+'px';el.textContent=`${fmtM(b.s)}–${fmtM(b.e)} ${b.title}`});
- el.addEventListener('pointerup',()=>{if(y0==null)return;y0=null;if(b.s!=s0){learn(b);save();renderPlan()}})}
-$('#propose').onclick=()=>{plans[day]=propose(day);save();renderPlan()};
-$('#addBlock').onclick=()=>{plan().push({id:Date.now(),title:'Custom session',s:600,e:690,goal:goal(false),review:''});save();renderPlan()};
 const shiftDay=n=>{const d=new Date(day+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);day=d.toISOString().slice(0,10);renderPlan()};
-$('#prevDay').onclick=()=>shiftDay(-1);$('#nextDay').onclick=()=>shiftDay(1);$('#day').onchange=e=>{day=e.target.value||day;renderPlan()};
 const CHECK=['Slept & focused (mood 1-5 ≥ 3)','Checked news calendar for this session','Marked key levels on watchlist','Know my max loss today','Setups defined: entry, stop, target before clicking','No revenge trades after a loss'];
 function renderChecklist(){const c=LS.g('check_'+day,[]);$('#checklist').innerHTML=CHECK.map((t,i)=>`<label style="color:var(--tx)"><input type="checkbox" data-i="${i}" ${c[i]?'checked':''} style="display:inline;width:auto"> ${t}</label>`).join('')}
 $('#checklist').addEventListener('change',e=>{const c=LS.g('check_'+day,[]);c[e.target.dataset.i]=e.target.checked;LS.s('check_'+day,c)});
