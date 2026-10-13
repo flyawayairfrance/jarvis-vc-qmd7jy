@@ -225,3 +225,6 @@ html{-webkit-tap-highlight-color:transparent}button{touch-action:manipulation}
 @media(max-width:800px){nav#tabs{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr))!important;gap:2px!important;overflow:hidden!important;padding-left:4px!important;padding-right:4px!important}
  nav#tabs button{min-width:0!important;width:auto!important;padding:5px 0!important;font-size:9px!important;gap:2px!important;margin:0!important}
  nav#tabs button i{font-size:17px!important}nav#tabs button span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.2px}}
+/* ticker: dark charcoal strip */
+#ticker{background:#141414!important;border:0!important;border-bottom:1px solid #2a2a2a!important;border-top:1px solid #1f1f1f!important;filter:none!important;-webkit-filter:none!important;color-scheme:dark;min-height:46px;overflow:hidden}
+#ticker *,#ticker iframe{filter:none!important;-webkit-filter:none!important}#ticker iframe{color-scheme:dark;background:#141414}
