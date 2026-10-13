@@ -1,6 +1,9 @@
 /* JarvisTools: generic client-side actions the AI can call. Each returns {desc, tab, selector} so Follow mode navigates there. */
 (()=>{const up=s=>String(s||'').toUpperCase().trim(),bk=v=>v?Date.parse(v.length<=16?v+':00+07:00':v):Date.now();
 window.JarvisTools={
+ live_control:g=>{const msg=window.JarvisLive?JarvisLive.control(g):'Live unavailable';return{desc:msg,tab:'live',selector:g.action=='timeframe'?'#lvTf':g.action=='symbol'?'#lvSym':g.action&&/tradingview/.test(g.action)?'#lvTv':g.action&&/chart/.test(g.action)?'#lvHide':g.action&&/sound/.test(g.action)?'#lvSound':g.action=='explain_signal'?'#lvSug':'#lvGo'}},
+ position_size:g=>{const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null){el.value=v;el.dispatchEvent(new Event('input'))}};setTimeout(()=>{set('pEntry',g.entry);set('pStop',g.stop);set('pPv',g.point_value)},350);return{desc:`Position size for entry ${g.entry}, stop ${g.stop}`,tab:'risk',selector:'#pOut'}},
+
  notifications_on:g=>{const N=window.JarvisNotify;if(!N)return{desc:'Notifications unavailable'};const st=N.status();
   if('Notification' in window&&Notification.permission=='granted'){N.enable(Promise.resolve('granted'));return{desc:'Turning notifications on for this device…',tab:'risk',selector:'#ntCard'}}
   setTimeout(()=>{const c=document.getElementById('chat');if(!c)return;const d=document.createElement('div');d.className='nt-chatcta';d.innerHTML=Notification.permission=='denied'?'<span>Your browser has blocked notifications. Open the status sheet next to the Notifications switch for how to re-allow them.</span>':'<span>Your browser needs one tap from you:</span><button class="pri">Allow notifications</button>';const b=d.querySelector('button');if(b)b.onclick=()=>{N.enableClick(false);b.textContent='Requested…';b.disabled=true};c.appendChild(d);c.scrollTop=c.scrollHeight},500);

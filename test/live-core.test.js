@@ -22,4 +22,12 @@ T('setup: no trade without MTF agreement, trade with R:R>=2 when sweep+agreement
  const a2={...L.analyse(C,{'1m':'up','5m':'up','15m':'up','1h':'up'}),pools,sweep:L.sweeps(C,pools,C.length-2),vwap:null};const s=L.setup(C,a2,'NQ',500);assert.ok(s,'expected setup');assert.equal(s.dir,'BUY');assert.ok(s.rr>=2);assert.ok(s.stop<lo-0.4*A);
  assert.equal(L.setup(C,{...a2,mtf:{'1m':'up','5m':'up','15m':'down','1h':'up'}},'NQ',500),null);
  assert.equal(L.setup(C,{...a2,pools:[pools[0],{...pools[1],p:lo+0.7*A+1*A}]},'NQ',500),null,'R:R<2 must not fire')});
+
+T('RSI bounds and direction',()=>{const up=L.rsi(K(Array.from({length:40},(_,i)=>[i,i+1.2,i-.2,i+1]))),dn=L.rsi(K(Array.from({length:40},(_,i)=>[100-i,100-i+.2,100-i-1.2,100-i-1])));assert.ok(up[39]>90&&up[39]<=100);assert.ok(dn[39]<10&&dn[39]>=0)});
+T('agg 5m -> 1h buckets',()=>{const h=L.agg(K(Array.from({length:24},(_,i)=>[i,i+1,i-1,i+.5]),1791849600,300),3600);assert.equal(h.length,2);assert.equal(h[0].o,0);assert.equal(h[0].h,12);assert.equal(h[0].c,11.5)});
+T('simulate: stop checked first when both hit in one bar',()=>{const c=K([[10,10,10,10],[10,13,7,10]]);assert.equal(L.simulate(c,0,{dir:'BUY',entry:10,stop:8,target:12}).r,-1);assert.equal(L.simulate(K([[10,10,10,10],[10,12.5,9,12]]),0,{dir:'BUY',entry:10,stop:8,target:12}).r,1)});
+T('confluence: none on flat data; gates cap score <80',()=>{const flat=K(Array.from({length:200},()=>[10,10.1,9.9,10]));assert.equal(L.confluence(flat,{}),null);
+ const c=[];let q=100;for(let i=0;i<260;i++){const o=q;q+=Math.sin(i/6)*0.8+(i%17==0?-2:0.02);c.push([o,Math.max(o,q)+0.3,Math.min(o,q)-0.3,q,100+(i%23==0?400:0)])}const C=K(c);
+ let fired=0,capped=true;for(let n=150;n<C.length;n++){const s=L.confluence(C.slice(0,n),{newsSoon:true});if(s){fired++;if(s.score>=80)capped=false;assert.ok(s.score>=0&&s.score<=100);assert.ok(s.checks.length==10)}}assert.ok(capped,'news gate must cap score')});
+T('confluence weights sum to 100',()=>assert.equal(Object.values(L.W0).reduce((a,b)=>a+b,0),100));
 console.log(ok+' tests passed');

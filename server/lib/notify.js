@@ -30,12 +30,12 @@ export async function tick({users,getState,shared}){const log=[],now=Date.now();
   if(p.stop){try{const st=await getState(u.uid),P=k=>{try{return JSON.parse(st?.keys?.[k]||'null')}catch{return null}};const S={acct:10000,stop:3,...(P('ta_settings')||{})},tr=(P('ta_trades')||[]).filter(t=>bkDate(t.t)==bkDate(now));const pnl=tr.reduce((a,t)=>a+(+t.pnl||0),0),lim=S.acct*S.stop/100;
    if(pnl<=-lim)once('stop'+bkDate(now),{title:'⛔ Daily loss stop hit',body:`P&L today ${pnl.toFixed(0)} $ ≤ −${lim.toFixed(0)} $. Stop trading for today.`,tab:'risk',tag:'risk'});else if(pnl<=-0.7*lim)once('stop70'+bkDate(now),{title:'⚠️ 70% of daily stop used',body:`P&L today ${pnl.toFixed(0)} $ of −${lim.toFixed(0)} $. Reduce size or stop.`,tab:'risk',tag:'risk'})}catch(e){log.push('stop '+e.message)}}
   // live-session watcher (only when the app is not open: client heartbeats < 2 min handle it in-app)
-  const ss=r.session;if(ss?.on&&now-ss.at<12*36e5&&!(now-(ss.seen||0)<120e3&&ss.visible)&&(p.live||p.sweeps)){try{const key=ss.sym+ss.tf;const W=shared.w[key]||(shared.w[key]=await watch(ss.sym,ss.tf));
-    if(p.sweeps)W.sweeps.forEach(s=>once('sw'+key+s.p+W.bar,{title:`🧲 ${ss.sym} sweep of ${s.kind} ${f(s.p)}`,body:`Wick ${f(s.extreme)}, closed back ${s.side=='buy'?'below':'above'} (${ss.tf}). Watch for a setup.`,tab:'live',tag:'live'}));
-    if(p.live&&W.setup){const s=W.setup;once('su'+key+W.bar,{title:`💡 ${s.dir} ${ss.sym} · R:R ${s.rr.toFixed(1)}`,body:`Entry ${f(s.entry)} · stop ${f(s.stop)} · target ${f(s.target)} (${s.targetName}). ${s.reason} Paper trade – not financial advice.`,tab:'live',tag:'live',urgency:'high'})}}catch(e){log.push('live '+e.message)}}
+  const ss=r.session;if(ss?.on&&now-ss.at<12*36e5&&!(now-(ss.seen||0)<120e3&&ss.visible)&&(p.live||p.sweeps)){try{const key=ss.sym+ss.tf;const W=shared.w[key]||(shared.w[key]=await watch(ss.sym,ss.tf,shared.cal.some(e=>Math.abs(e.in_hours)<=0.25)));
+    if(p.sweeps)W.sweeps.forEach(s=>once('sw'+key+s.p+W.bar,{title:`${ss.sym}: sweep of ${s.kind}`,body:`Swept ${f(s.p)} and closed back – watching for an A+ setup`,tab:'live',tag:'live'}));
+    if(p.live&&W.signal){const s=W.signal,why=[s.features.sweep?'Sweep':null,s.features.zone?(/OB/.test(s.type)?'OB':'FVG'):null].filter(Boolean).join(' + ')||s.type;once('sig'+key+s.dir+f(s.stop),{title:`${ss.sym}: ${s.dir} NOW!`,body:`${why} at ${f(s.entry)}, stop ${f(s.stop)}, target ${f(s.target)}`,tab:'live',tag:'live',urgency:'high'})}}catch(e){log.push('live '+e.message)}}
   for(const k in sent)if(now-sent[k]>3*864e5)delete sent[k];
   if(q.length){for(const m of q.slice(0,4)){const o=await send(r,m);log.push(`${u.uid.slice(0,6)} ${m.title}: ${JSON.stringify(o)}`)}u.dirty=true}}
  return log}
-async function watch(sym,tf){const [c,...h]=await Promise.all([cs(sym,tf,400),cs(sym,'1m',300),cs(sym,'5m',300),cs(sym,'15m',300),cs(sym,'1h',300)]);
- const mtf={'1m':LC.trendOf(h[0]),'5m':LC.trendOf(h[1]),'15m':LC.trendOf(h[2]),'1h':LC.trendOf(h[3])};const a=LC.analyse(c,mtf);if(!a)return{sweeps:[],setup:null,bar:0};
- return{bar:c[c.length-2].t,sweeps:a.sweep,setup:LC.setup(c,a,sym,100)}}
+async function watch(sym,tf,newsSoon){const [c,m1,m15,h1,h4]=await Promise.all([cs(sym,tf,400),cs(sym,'1m',300),cs(sym,'15m',300),cs(sym,'1h',300),cs(sym,'4h',200)]);
+ const cl=x=>x.slice(0,-1),C=cl(c);const a=LC.analyse(c,{});const sig=LC.confluence(C.slice(-300),{m1:tf=='1m'?null:cl(m1),m15:tf=='15m'?null:cl(m15),h1:cl(h1),h4:cl(h4),newsSoon,sym,riskUSD:100});
+ return{bar:c[c.length-2].t,sweeps:a?a.sweep:[],signal:sig&&sig.score>=80?sig:null}}
