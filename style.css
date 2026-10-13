@@ -35,3 +35,41 @@ main,section,.card,.grid2,.grid3,.grid2>*,.grid3>*,.tv,.bk,header,#ticker{max-wi
 iframe,canvas,table,img{max-width:100%!important}.tv iframe,.tradingview-widget-container{width:100%!important}
 #tabs{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}#tabs button{flex:0 0 auto}
 #prepBlk{max-width:100%;flex:1 1 200px}td{word-break:break-word}
+/* v2 clean layout */
+:root{--bg:#0a0d13;--card:#121722;--line:#1f2635;--r:14px}
+body{font-size:15px;-webkit-font-smoothing:antialiased}
+header{padding:10px 18px;min-height:56px;backdrop-filter:blur(8px);background:#0a0d13ee}
+.brand{font-size:16px;letter-spacing:.3px}
+#ticker{border-bottom:1px solid var(--line)}
+nav#tabs{position:sticky;top:56px;z-index:40;background:#0a0d13ee;backdrop-filter:blur(8px);gap:6px;padding:8px 18px;justify-content:center}
+nav#tabs button{display:flex;align-items:center;gap:6px;padding:9px 14px;font-weight:500;min-height:40px}
+nav#tabs button i{font-style:normal;font-size:15px}
+nav#tabs button.on{background:#1b2232;color:var(--ac);box-shadow:inset 0 0 0 1px #d4af3740}
+main{padding:18px;max-width:1240px}
+.card{border-radius:var(--r);padding:16px 18px;margin:0 0 14px}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--mu);margin-bottom:12px;font-weight:600}
+.grid2,.grid3{gap:14px}
+button,input,select,textarea{min-height:40px;padding:8px 12px;border-radius:10px}
+button:hover{border-color:#3a4560}button.pri:hover{filter:brightness(1.08)}
+input:focus,select:focus{outline:none;border-color:var(--ac)}
+.row{gap:10px;margin:8px 0}
+section>.row:first-child{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin:0 0 14px}
+.stat{border-radius:12px;padding:12px 14px}.stat b{font-size:22px}
+.tv{border-radius:var(--r);overflow:hidden}
+#msgs{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;height:calc(100vh - 300px)}
+.m{line-height:1.5}
+#chatF{position:sticky;bottom:0}
+@media(max-width:800px){
+ body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+ header{padding:8px 12px;min-height:52px}
+ nav#tabs{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;justify-content:space-between;gap:0;padding:6px 4px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);border-bottom:0;overflow:hidden}
+ nav#tabs button{flex:1 1 0;min-width:0;flex-direction:column;gap:2px;padding:6px 0;font-size:10px;min-height:52px;border-radius:10px}
+ nav#tabs button i{font-size:19px}
+ nav#tabs button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ nav#tabs button.on{box-shadow:none}
+ main{padding:12px}
+ .card{padding:14px}
+ #msgs{height:calc(100vh - 330px)}
+ #chatF{bottom:calc(68px + env(safe-area-inset-bottom));background:var(--bg);padding:6px 0;margin:0}
+ #prepChart{height:380px!important}#chart{height:420px!important}
+}
