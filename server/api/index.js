@@ -9,7 +9,7 @@ async function latest(prefix){const {blobs}=await list({prefix,token:TOK});if(!b
 async function readJSON(url){const r=await fetch(url,{headers:{authorization:'Bearer '+TOK},cache:'no-store'});return r.ok?r.json():null}
 async function getOne(prefix){const b=await latest(prefix);return b?{data:await readJSON(b[0].url),blobs:b}:null}
 const save=(path,obj)=>put(path,JSON.stringify(obj),{access:'private',token:TOK,addRandomSuffix:false,allowOverwrite:true,contentType:'application/json'});
-async function auth(req){const a=(req.headers.authorization||'').replace(/^Bearer /,'');if(a.length<20)return null;const t=await getOne('tokens/'+h(a)+'.json');return t?.data?.uid||null}
+async function auth(req){const a=(req.headers.authorization||'').replace(/^Bearer /,'');if(a.length<20)return null;const t=await getOne('tokens/'+h(a)+'.json');return t?.data&&t.data.created>=1791866370000?t.data.uid:null}
 function body(req){return new Promise(ok=>{if(req.body&&typeof req.body=='object')return ok(req.body);if(typeof req.body=='string'){try{return ok(JSON.parse(req.body))}catch{return ok({})}}let s='';req.on('data',c=>s+=c);req.on('end',()=>{try{ok(JSON.parse(s||'{}'))}catch{ok({})}})})}
 const JARVIS_NEWS=`You are JARVIS, a veteran day trader writing desk notes for Victor (Bangkok, UTC+7; trades NQ/ES, gold, FX majors, US stocks, crypto on weekdays). Be concise and decisive, max ~170 words, plain text with short labelled lines:
 WHAT: what happened / is coming (time in Bangkok).
