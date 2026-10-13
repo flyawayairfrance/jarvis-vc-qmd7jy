@@ -3,7 +3,7 @@
 let on=LSg('follow',true),q=[],busy=false;const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const cap=document.createElement('div');cap.id='jvCaption';cap.className='hidden';document.body.appendChild(cap);
 const ring=document.createElement('div');ring.id='jvRing';ring.className='hidden';document.body.appendChild(ring);
-function tab(t){const b=document.querySelector(`#tabs button[data-t="${t}"]`);if(b&&!b.classList.contains('on'))b.click()}
+function tab(t){const b=document.querySelector(`#tabs button[data-t="${t}"]`);if(b&&!b.classList.contains('on'))(window.JARVIS_NAV||(x=>b.click()))(t)}
 function say(t){cap.innerHTML='<b>Jarvis:</b> '+String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));cap.classList.remove('hidden')}
 async function focus(el){if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});await wait(450);const r=el.getBoundingClientRect();
  Object.assign(ring.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});ring.classList.remove('hidden');el.classList.add('jv-glow');setTimeout(()=>el.classList.remove('jv-glow'),2600)}
@@ -16,8 +16,8 @@ const steps={
  async journal(){tab('journal');await wait(300);await focus(document.querySelector('#trades tr')||document.getElementById('trades'))},
  async alerts(){tab('news');await wait(300);await focus(document.getElementById('jarvisNewsReports')||document.getElementById('events'))},
  async generic(a){if(a.tab)tab(a.tab);await wait(300);if(a.selector)await focus(document.querySelector(a.selector))}};
-const route=n=>/block|goal/.test(n)?'block':/risk|recommend/.test(n)?'risk':/prep/.test(n)?'prep':/journal|trade/.test(n)?'journal':/alert|news|report/.test(n)?'alerts':'generic';
-async function run(){if(busy)return;busy=true;while(q.length){const a=q.shift();try{say(a.desc||a.name);await steps[route(a.name||'')](a);await wait(1500)}catch(e){console.warn('follow',e)}}
+const route0=n=>/block|goal/.test(n)?'block':/risk|recommend/.test(n)?'risk':/prep/.test(n)?'prep':/journal|trade/.test(n)?'journal':/alert|news|report/.test(n)?'alerts':'generic';
+const route=(n,a)=>a&&a.tab?'generic':route0(n);async function run(){if(busy)return;busy=true;while(q.length){const a=q.shift();try{say(a.desc||a.name);await steps[route(a.name||'',a)](a);await wait(1500)}catch(e){console.warn('follow',e)}}
  await wait(600);cap.classList.add('hidden');ring.classList.add('hidden');busy=false}
 addEventListener('scroll',()=>ring.classList.add('hidden'),{passive:true});
 window.JarvisFollow={play(list){if(!on||!list||!list.length)return;q.push(...[].concat(list));run()},get on(){return on},set(v){on=!!v;localStorage.setItem('ta_follow',JSON.stringify(on));paint()}};

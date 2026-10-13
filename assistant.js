@@ -90,7 +90,7 @@ function appState(){const td=today(),days=[...Array(7)].map((_,i)=>addDays(td,i)
   trades_summary:{count:tt.length,net_pnl:+tot.toFixed(2),win_rate:tt.length?Math.round(tt.filter(t=>t.pnl>0).length/tt.length*100):null,last5:tt.slice(-5).map(t=>({sym:t.sym,pnl:t.pnl,when:new Date(t.t).toLocaleString('en-GB',{timeZone:TZ})}))},
   upcoming_high_impact_news:allEvents().filter(e=>e.impact=='High'&&e.t>Date.now()).slice(0,12).map(e=>({when:new Date(e.t).toLocaleString('en-GB',{timeZone:TZ,weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),country:e.country,title:e.title})),
   prep_today:LS.g('prep_'+td,{})}}
-function act(x){const g=x.args||{},D=g.date||today(),ses=sesOf(g.session);
+function act(x){const g=x.args||{},D=g.date||today(),ses=sesOf(g.session);act.follow=null;if(window.JarvisTools&&JarvisTools[x.name]){const r=JarvisTools[x.name](g)||{};act.follow={tab:r.tab,selector:r.selector};return r.desc||null}
  switch(x.name){
  case 'set_block':case 'move_block':{let b=ses?findBlk(D,ses)[0]:null;if(!b){b=ses?proposeBlock(D,ses):{id:Date.now()+Math.random(),title:g.title||'Custom session',s:600,e:690,goal:goal(false),review:''};dayPlan(D).push(b)}
   const len=b.e-b.s,s=toMin(g.start),e=toMin(g.end);if(s!=null)b.s=s;b.e=e!=null&&x.name=='set_block'?e:b.s+len;if(e===0)b.e=1440;if(g.title)b.title=g.title;if(g.symbols)b.symbol=g.symbols;if(g.prep_notes)b.prepNotes=g.prep_notes;if(b.e<=b.s)b.e=b.s+60;b.e=Math.min(b.e,1440);dayPlan(D).sort((p,q)=>p.s-q.s);act.last=b;act.lastD=D;return`${x.name=='move_block'?'Moved':'Set'} ${blkTxt(b)} on ${dname(D)}`}
@@ -103,7 +103,7 @@ function act(x){const g=x.args||{},D=g.date||today(),ses=sesOf(g.session);
 async function aiReply(){const tk=localStorage.getItem('tasync_token');if(!tk||!navigator.onLine)return false;
  const typing={id:mid(),t:Date.now(),r:'a',text:'…',chips:[],tmp:1};chat.push(typing);$('#msgs').insertAdjacentHTML('beforeend','<div class="m a" id="typing">…</div>');$('#msgs').scrollTop=1e9;chat.pop();
  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),45000);const r=await fetch(API_CHAT,{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({messages:chat.map(m=>({role:m.r=='u'?'user':'assistant',content:m.text})),state:appState()})});
-  if(!r.ok)throw new Error(r.status);const j=await r.json();let done=[];act.last=null;if(j.actions&&j.actions.length){snap();const fl=[];j.actions.forEach(x=>{try{act.last=null;const d=act(x);if(d){done.push(d);fl.push({...x,desc:d,blockId:act.last&&act.last.id,date:(act.last&&act.lastD)||(x.args||{}).date})}}catch(e){console.warn(e)}});LS.s('settings',S);commit();if(fl.length&&window.JarvisFollow)setTimeout(()=>JarvisFollow.play(fl),400)}
+  if(!r.ok)throw new Error(r.status);const j=await r.json();let done=[];act.last=null;if(j.actions&&j.actions.length){snap();const fl=[];j.actions.forEach(x=>{try{act.last=null;const d=act(x);if(d){done.push(d);fl.push({...x,desc:d,blockId:act.last&&act.last.id,date:(act.last&&act.lastD)||(x.args||{}).date,...(act.follow||{})})}}catch(e){console.warn(e)}});LS.s('settings',S);commit();if(fl.length&&window.JarvisFollow)setTimeout(()=>JarvisFollow.play(fl),400)}
   let txt=(j.text||'').trim();if(done.length)txt=(txt?txt+'\n\n':'')+'✅ '+done.join('\n✅ ');if(!txt)txt='Done. Anything else for your plan?';
   const el=document.getElementById('typing');if(el)el.remove();say(txt,(j.chips&&j.chips.length)?j.chips:done.length?['Undo',"Today's plan"]:[]);return true}
  catch(e){const el=document.getElementById('typing');if(el)el.remove();return false}}
@@ -113,4 +113,4 @@ $('#chatF').onsubmit=e=>{e.preventDefault();send($('#chatIn').value);$('#chatIn'
 $('#chips').onclick=e=>{if(e.target.tagName=='BUTTON')send(e.target.textContent)};
 function opened(){if(!LS.g('acctSet',0)&&!chat.some(m=>m.r=='a')){pending={type:'acct'};say("Hi Victor 👋 I'm your trading assistant. What's your (paper) account size in $?",['$1000','$5000','$10000','$25000'])}else if(!chat.length)say("Hi Victor 👋 Ask me anything about your plan. Type 'help' for examples.");draw()}
 document.querySelector('[data-t=chat]').addEventListener('click',opened);draw();
-window.taSend=send;})();
+window.taSend=send;window.taChatReload=()=>{chat=LS.g('chat',[]);draw()};})();
