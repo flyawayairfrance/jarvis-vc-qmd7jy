@@ -8,7 +8,7 @@ function lanes(bl){const s=bl.slice().sort((a,b)=>a.s-b.s),end=[];s.forEach(b=>{
 window.calRender=function(){const today=bkDate(new Date());$('#day').value=day;
  const days=view=='week'?[...Array(7)].map((_,i)=>addD(day,i-dow(day))):[day];
  $('#calTitle').textContent=view=='week'?lbl(days[0],{day:'numeric',month:'short'})+' – '+lbl(days[6],{day:'numeric',month:'short',year:'numeric'}):lbl(day,{weekday:'long',day:'numeric',month:'long'});
- document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.v==view));
+ document.querySelectorAll('.seg button[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==view));
  const ss=sessions(day);$('#dayNote').textContent=isWeekend(day)&&view=='day'?'Weekend – markets closed':'';
  let h=`<div class="calhead" style="--n:${days.length}"><div></div>${days.map(d=>`<button class="dh${d==today?' td':''}" data-d="${d}"><small>${lbl(d,{weekday:'short'})}</small><b>${lbl(d,{day:'numeric'})}</b></button>`).join('')}</div><div class="calscroll"><div class="calgrid" style="--n:${days.length};height:${24*HH}px"><div class="gut">${[...Array(24)].map((_,i)=>`<span style="top:${i*HH}px">${pad(i)}:00</span>`).join('')}</div>`;
  days.forEach(d=>{h+=`<div class="col${isWeekend(d)?' we':''}" data-d="${d}">`;
@@ -33,7 +33,7 @@ $('#cal').addEventListener('click',e=>{const dh=e.target.closest('.dh');if(dh){d
 $('#cal').addEventListener('pointerdown',e=>{const el=e.target.closest('.ev2');if(!el||e.pointerType!='mouse')return;const b=getP(el.dataset.d).find(x=>x.id==el.dataset.id);const y0=e.clientY,s0=b.s,dur=b.e-b.s;el._dragged=false;
  const mv=ev=>{const d=Math.round((ev.clientY-y0)/P/15)*15;if(Math.abs(ev.clientY-y0)>5)el._dragged=true;b.s=Math.min(1440-dur,Math.max(0,s0+d));b.e=b.s+dur;el.style.top=b.s*P+'px'};
  const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);if(b.s!=s0){const od=day;day=el.dataset.d;learn(b);day=od;save();renderPlan()}setTimeout(()=>el._dragged=false,0)};addEventListener('pointermove',mv);addEventListener('pointerup',up)});
-document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{view=b.dataset.v;LS.s('calView',view);renderPlan()});
+document.querySelectorAll('.seg button[data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;LS.s('calView',view);renderPlan()});
 $('#prevDay').onclick=()=>shiftDay(view=='week'?-7:-1);$('#nextDay').onclick=()=>shiftDay(view=='week'?7:1);$('#todayBtn').onclick=()=>{day=bkDate(new Date());renderPlan()};
 $('#day').onchange=e=>{day=e.target.value||day;renderPlan()};
 $('#propose').onclick=()=>{const ds=view=='week'?[...Array(7)].map((_,i)=>addD(day,i-dow(day))):[day];if(ds.some(d=>(plans[d]||[]).length)&&!confirm('Replace blocks with suggested times?'))return;ds.forEach(d=>plans[d]=propose(d));save();renderPlan()};

@@ -102,13 +102,32 @@ function act(x){const g=x.args||{},D=g.date||today(),ses=sesOf(g.session);act.fo
  return null}
 async function aiReply(){const tk=localStorage.getItem('tasync_token');if(!tk||!navigator.onLine)return false;
  const typing={id:mid(),t:Date.now(),r:'a',text:'…',chips:[],tmp:1};chat.push(typing);$('#msgs').insertAdjacentHTML('beforeend','<div class="m a" id="typing">…</div>');$('#msgs').scrollTop=1e9;chat.pop();
- try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),45000);const r=await fetch(API_CHAT,{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({messages:chat.map(m=>({role:m.r=='u'?'user':'assistant',content:m.text})),state:appState()})});
-  if(!r.ok)throw new Error(r.status);const j=await r.json();let done=[];act.last=null;if(j.actions&&j.actions.length){snap();const fl=[];j.actions.forEach(x=>{try{act.last=null;const d=act(x);if(d){done.push(d);fl.push({...x,desc:d,blockId:act.last&&act.last.id,date:(act.last&&act.lastD)||(x.args||{}).date,...(act.follow||{})})}}catch(e){console.warn(e)}});LS.s('settings',S);commit();if(fl.length&&window.JarvisFollow)setTimeout(()=>JarvisFollow.play(fl),400)}
-  let txt=(j.text||'').trim();if(done.length)txt=(txt?txt+'\n\n':'')+'✅ '+done.join('\n✅ ');if(!txt)txt='Done. Anything else for your plan?';
+ try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),45000);const r=await fetch(API_CHAT,{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({messages:chat.map(m=>({role:m.r=='u'?'user':'assistant',content:m.text})),state:appState(),orders:LS.g('orders',[]),memory:LS.g('memory','')})});
+  if(!r.ok){if(r.status>=500||r.status==402){const el=document.getElementById('typing');if(el)el.remove();aiReply.offline=1}throw new Error(r.status)}const j=await r.json();if(j.memory)LS.s('memory',j.memory);let done=[],fails=[];act.last=null;if(j.actions&&j.actions.length){const R=runActions(j.actions,false);done=R.done;fails=R.fails}
+  let txt=(j.text||'').trim();if(done.length)txt=(txt?txt+'\n\n':'')+'✅ '+done.join('\n✅ ');if(fails.length)txt+=(txt?'\n':'')+'⚠️ Not applied: '+fails.join(', ')+' (state did not change).';if(!txt)txt='Done. Anything else for your plan?';
   const el=document.getElementById('typing');if(el)el.remove();say(txt,(j.chips&&j.chips.length)?j.chips:done.length?['Undo',"Today's plan"]:[]);return true}
  catch(e){const el=document.getElementById('typing');if(el)el.remove();return false}}
+/* DAVOS local obedience: deterministic router runs first (works offline), executes via the same tools, verifies the state changed, retries once, reports honestly */
+const VERIFY={live_control:g=>{const st=window.JarvisLive&&JarvisLive.state?JarvisLive.state():{};return g.action=='start'?st.running&&(!g.symbol||st.sym==g.symbol):g.action=='stop'?!st.running:g.action=='timeframe'?st.tf==g.timeframe:g.action=='symbol'?st.sym==g.symbol:g.action=='tradingview_on'?st.tvOn:g.action=='tradingview_off'?!st.tvOn:g.action=='hide_chart'?st.hidden:g.action=='show_chart'?!st.hidden:true},
+ navigate:g=>(document.querySelector('#tabs .on')||{}).dataset?.t==g.tab,
+ set_risk:g=>(g.account_size==null||S.acct==g.account_size)&&(g.risk_pct==null||S.risk==g.risk_pct)&&(g.daily_stop_pct==null||S.stop==g.daily_stop_pct)&&(g.max_trades_per_day==null||S.max==g.max_trades_per_day),
+ set_alert_toggles:g=>{const p=(window.JarvisNotify&&JarvisNotify.status().prefs)||{};return Object.keys(g).every(k=>p[k]===g[k])},
+ set_block:g=>findBlk(g.date||today(),sesOf(g.session)).length>0,
+ delete_block:g=>g.session?!findBlk(g.date||today(),sesOf(g.session)).length:!(plans[g.date||today()]||[]).length,
+ standing_order:g=>g.action!='add'||LS.g('orders',[]).includes(g.text),
+ settings:g=>g.follow_mode==null||!window.JarvisFollow||JarvisFollow.on===g.follow_mode,
+ watchlist:g=>LS.g('watch',[]).includes(g.symbol)===(g.action!='remove')};
+function runActions(list,instant){snap();const done=[],fails=[],fl=[];
+ for(const x of list){let d=null,ok=false;for(let k=0;k<2&&!ok;k++){try{act.last=null;d=act(x)}catch(e){console.warn(e);d=null}
+   if(instant&&act.follow&&act.follow.tab&&/^(navigate|live_control|teach|open_lesson|start_drill)$/.test(x.name))try{(window.JARVIS_NAV||function(){})(act.follow.tab)}catch{}
+   const v=VERIFY[x.name];ok=!!d&&(!v||v(x.args||{}))}
+  if(ok){done.push(d);fl.push({...x,desc:d,blockId:act.last&&act.last.id,date:(act.last&&act.lastD)||(x.args||{}).date,...(act.follow||{})})}else fails.push(x.name.replace(/_/g,' '))}
+ LS.s('settings',S);commit();if(fl.length&&window.JarvisFollow)setTimeout(()=>JarvisFollow.play(fl.filter(f=>!/^(navigate|live_control)$/.test(f.name))),300);return{done,fails}}
+window.DavosRun=runActions;
+function tryLocal(text){const R=window.DavosRouter&&DavosRouter.route(text);if(!R||!R.actions.length)return false;const {done,fails}=runActions(R.actions,true);
+ let t=done.length?'✅ '+done.join('\n✅ '):'';if(fails.length)t+=(t?'\n':'')+'⚠️ I tried to '+fails.join(', ')+' but the app state did not change – please check that tab or try again.';say(t||R.reply||'Done.',done.length?['Undo']:[]);return true}
 async function send(text){if(!text.trim())return;chat.push({id:mid(),t:Date.now(),r:'u',text,chips:[]});LS.s('chat',chat);draw();const t0=norm(text);const local=/^(undo|annule|annuler|yes, apply|no thanks|today s plan|help|aide|open prep tab)$/.test(t0)||(pending&&pending.type=='acct');
- if(!local&&await aiReply())return;try{handle(text)}catch(e){console.warn(e);say("Could you tell me a bit more? For example which day, session or time you mean.")}draw()}
+ if(!local&&tryLocal(text)){draw();return}if(!local&&await aiReply())return;if(aiReply.offline&&!local){aiReply.offline=0;say('(AI server offline right now – I handled this in offline mode.)')}try{handle(text)}catch(e){console.warn(e);say("Could you tell me a bit more? For example which day, session or time you mean.")}draw()}
 $('#chatF').onsubmit=e=>{e.preventDefault();send($('#chatIn').value);$('#chatIn').value=''};
 $('#chips').onclick=e=>{if(e.target.tagName=='BUTTON')send(e.target.textContent)};
 function opened(){if(!LS.g('acctSet',0)&&!chat.some(m=>m.r=='a')){pending={type:'acct'};say("Hi Victor 👋 I'm your trading assistant. What's your (paper) account size in $?",['$1000','$5000','$10000','$25000'])}else if(!chat.length)say("Hi Victor 👋 Ask me anything about your plan. Type 'help' for examples.");draw()}

@@ -1,0 +1,8 @@
+/* DAVOS standing orders: rules the assistant must always follow (editable here, or by chat: "from now on …"). Synced via ta_orders. */
+(()=>{const host=document.querySelector('#risk .grid2');if(!host)return;const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+host.insertAdjacentHTML('beforeend',`<div class="card" id="soCard"><h3>Standing orders</h3><p class="muted" style="font-size:12px">DAVOS always follows these. Add here or say “from now on …” in chat.</p><ul id="soList" class="so-list"></ul><form id="soForm" class="so-form"><input id="soIn" placeholder="e.g. always risk 1% · no trades before London open" maxlength="200"><button class="pri">Add</button></form></div>`);
+const get=()=>{try{return JSON.parse(localStorage.getItem('ta_orders')||'[]')}catch{return[]}},set=o=>localStorage.setItem('ta_orders',JSON.stringify(o));
+function render(){const o=get();document.getElementById('soList').innerHTML=o.length?o.map((t,i)=>`<li><span>${E(t)}</span><button data-i="${i}" aria-label="Remove">✕</button></li>`).join(''):'<li class="muted">No standing orders yet.</li>'}
+document.getElementById('soList').onclick=e=>{const i=e.target.dataset.i;if(i==null)return;const o=get();o.splice(+i,1);set(o);render()};
+document.getElementById('soForm').onsubmit=e=>{e.preventDefault();const v=document.getElementById('soIn').value.trim();if(!v)return;const o=get();if(!o.includes(v))o.push(v);set(o);document.getElementById('soIn').value='';render()};
+window.DavosOrders={render,get};render();document.addEventListener('jarvis:tab',e=>{if(e.detail=='risk')render()})})();

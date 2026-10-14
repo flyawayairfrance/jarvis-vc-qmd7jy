@@ -1,6 +1,7 @@
 /* JarvisTools: generic client-side actions the AI can call. Each returns {desc, tab, selector} so Follow mode navigates there. */
 (()=>{const up=s=>String(s||'').toUpperCase().trim(),bk=v=>v?Date.parse(v.length<=16?v+':00+07:00':v):Date.now();
 window.JarvisTools={
+ standing_order:g=>{let o=LS.g('orders',[]);if(g.action=='clear')o=[];else if(g.action=='remove')o=o.filter(x=>!x.toLowerCase().includes(String(g.text||'').toLowerCase()));else if(g.text&&!o.includes(g.text))o.push(String(g.text).slice(0,200));LS.s('orders',o);window.DavosOrders?.render();return{desc:g.action=='clear'?'Standing orders cleared':g.action=='remove'?'Standing order removed':`Standing order saved: “${g.text}”`,tab:'risk',selector:'#soCard'}},
  live_control:g=>{const msg=window.JarvisLive?JarvisLive.control(g):'Live unavailable';return{desc:msg,tab:'live',selector:g.action=='timeframe'?'#lvTf':g.action=='symbol'?'#lvSym':g.action&&/tradingview/.test(g.action)?'#lvTv':g.action&&/chart/.test(g.action)?'#lvHide':g.action&&/sound/.test(g.action)?'#lvSound':g.action=='explain_signal'?'#lvSug':'#lvGo'}},
  position_size:g=>{const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null){el.value=v;el.dispatchEvent(new Event('input'))}};setTimeout(()=>{set('pEntry',g.entry);set('pStop',g.stop);set('pPv',g.point_value)},350);return{desc:`Position size for entry ${g.entry}, stop ${g.stop}`,tab:'risk',selector:'#pOut'}},
 
