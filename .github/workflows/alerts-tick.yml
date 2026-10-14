@@ -1,9 +1,9 @@
-name: JARVIS alerts tick
-# Free external pinger: Vercel Hobby crons only run daily, so GitHub Actions pings /api/tick every ~5 min
-# (GitHub may delay scheduled runs by several minutes under load). The endpoint is idempotent and self-throttled (>=3 min).
+name: DAVOS alerts tick
+# Free external pinger (Vercel Hobby crons are daily only). Every 15 min, Mon-Fri, 00:00-19:59 UTC = 07:00-02:59 Bangkok.
+# /api/tick is self-throttled and cheap (exits early when nobody has push enabled or a session/alert due).
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/15 0-19 * * 1-5'
   workflow_dispatch:
 jobs:
   tick:
