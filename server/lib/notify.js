@@ -23,7 +23,7 @@ export async function tick({users,getState,shared}){const log=[],now=Date.now();
   // news 15 / 5 min before (high impact)
   if(p.news)for(const e of shared.cal){const m=Math.round(e.in_hours*60);for(const b of[15,5])if(m<=b&&m>b-(b==15?10:5))once('n'+b+e.title+e.bangkok,{title:`📰 ${e.country} ${e.title} in ${m} min`,body:`High-impact at ${e.bangkok} BKK. ${b==5?'Be flat or tight – spreads widen.':'Plan around it; cut size.'}`,tab:'news',tag:'news'})}
   // daily briefing
-  if(p.briefing&&shared.briefing&&+new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour:'2-digit',hour12:false})>=7)once('b'+shared.bd,{title:'☀️ JARVIS pre-session briefing',body:shared.briefing.slice(0,180),tab:'news',tag:'brief'});
+  if(p.briefing&&shared.briefing&&+new Date().toLocaleString('en-GB',{timeZone:'Asia/Bangkok',hour:'2-digit',hour12:false})>=7)once('b'+shared.bd,{title:'☀️ DAVOS pre-session briefing',body:shared.briefing.slice(0,180),tab:'news',tag:'brief'});
   // opportunity scanner (max 2 per run)
   if(p.scanner)shared.alerts.filter(a=>now-a.t<30*60e3).slice(0,2).forEach(a=>once('a'+a.id,{title:'🎯 Scanner: '+(a.symbol||''),body:a.text,tab:'market',tag:'scan'}));
   // daily stop from synced journal + settings

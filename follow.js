@@ -1,10 +1,10 @@
-/* JARVIS Follow mode: navigates to whatever Jarvis changed, highlights and animates it. window.JarvisFollow.play([{name,args,desc,blockId,date}]) */
+/* DAVOS Follow mode: navigates to whatever Davos changed, highlights and animates it. window.JarvisFollow.play([{name,args,desc,blockId,date}]) */
 (()=>{const LSg=(k,d)=>{try{return JSON.parse(localStorage.getItem('ta_'+k))??d}catch{return d}};
 let on=LSg('follow',true),q=[],busy=false;const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const cap=document.createElement('div');cap.id='jvCaption';cap.className='hidden';document.body.appendChild(cap);
 const ring=document.createElement('div');ring.id='jvRing';ring.className='hidden';document.body.appendChild(ring);
 function tab(t){const b=document.querySelector(`#tabs button[data-t="${t}"]`);if(b&&!b.classList.contains('on'))(window.JARVIS_NAV||(x=>b.click()))(t)}
-function say(t){cap.innerHTML='<b>Jarvis:</b> '+String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));cap.classList.remove('hidden')}
+function say(t){cap.innerHTML='<b>Davos:</b> '+String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));cap.classList.remove('hidden')}
 async function focus(el){if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});await wait(450);const r=el.getBoundingClientRect();
  Object.assign(ring.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});ring.classList.remove('hidden');el.classList.add('jv-glow');setTimeout(()=>el.classList.remove('jv-glow'),2600)}
 async function type(el,val){if(!el)return;await focus(el);const v=String(val??el.value);el.value='';for(const ch of v){el.value+=ch;await wait(55)}el.dispatchEvent(new Event('input',{bubbles:true}))}
@@ -22,5 +22,5 @@ const route=(n,a)=>a&&a.tab?'generic':route0(n);async function run(){if(busy)ret
 addEventListener('scroll',()=>ring.classList.add('hidden'),{passive:true});
 window.JarvisFollow={play(list){if(!on||!list||!list.length)return;q.push(...[].concat(list));run()},get on(){return on},set(v){on=!!v;localStorage.setItem('ta_follow',JSON.stringify(on));paint()}};
 function paint(){const b=document.getElementById('jvFollowBtn');if(b){b.textContent=(on?'👁 Follow: on':'👁 Follow: off');b.classList.toggle('on',on)}}
-function mount(){const host=document.getElementById('chat');if(!host||document.getElementById('jvFollowBtn'))return;const b=document.createElement('button');b.id='jvFollowBtn';b.type='button';b.title='Show me each change Jarvis makes';b.onclick=()=>JarvisFollow.set(!on);host.prepend(b);paint()}
+function mount(){const host=document.getElementById('chat');if(!host||document.getElementById('jvFollowBtn'))return;const b=document.createElement('button');b.id='jvFollowBtn';b.type='button';b.title='Show me each change Davos makes';b.onclick=()=>JarvisFollow.set(!on);host.prepend(b);paint()}
 mount();})();

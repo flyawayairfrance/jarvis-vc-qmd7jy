@@ -1,11 +1,11 @@
-/* JARVIS intelligence client: opportunity alerts, news reports, daily briefing. Exposes window.JARVIS for the UI layer. */
+/* DAVOS intelligence client: opportunity alerts, news reports, daily briefing. Exposes window.JARVIS for the UI layer. */
 (()=>{const API='https://trading-assistant-api-r2rdjjf2yc-4746.vercel.app/api',L=(k,d)=>{try{return JSON.parse(localStorage.getItem('ta_'+k))??d}catch{return d}},W=(k,v)=>localStorage.setItem('ta_'+k,JSON.stringify(v));
 const J=window.JARVIS=Object.assign(window.JARVIS||{},{alerts:[],reports:[],briefing:null,listeners:[],on(f){this.listeners.push(f)}});const emit=()=>{J.listeners.forEach(f=>{try{f(J)}catch{}});render();document.dispatchEvent(new CustomEvent('jarvis:update',{detail:J}))};
 const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function notify(title,body){try{if(window.Notification&&Notification.permission=='granted')new Notification(title,{body:body.slice(0,180)})}catch{}const b=document.getElementById('banner');if(b){b.className='warn';b.textContent='🛰 '+title+': '+body.slice(0,160);clearTimeout(notify.t);notify.t=setTimeout(()=>b.className='hidden',15000)}}
 async function poll(){const seen=new Set(L('seenIntel',[]));let fresh=[];
  try{const a=await (await fetch(API+'/alerts?scan=1')).json();J.alerts=a.alerts||[];J.alertsAt=a.at;fresh.push(...J.alerts.filter(x=>!seen.has(x.id)).map(x=>[x.kind=='news'?'News ahead':'Opportunity '+(x.symbol||''),x.text,x.id]))}catch{}
- try{const r=await (await fetch(API+'/reports?gen=1')).json();J.reports=r.reports||[];J.briefing=r.briefing;J.date=r.date;fresh.push(...J.reports.filter(x=>!seen.has(x.id)).map(x=>['Jarvis report',x.title,x.id]));if(r.briefing&&!seen.has('brief'+r.date))fresh.push(['Pre-session briefing ready',r.briefing.text.split('\n')[0],'brief'+r.date])}catch{}
+ try{const r=await (await fetch(API+'/reports?gen=1')).json();J.reports=r.reports||[];J.briefing=r.briefing;J.date=r.date;fresh.push(...J.reports.filter(x=>!seen.has(x.id)).map(x=>['Davos report',x.title,x.id]));if(r.briefing&&!seen.has('brief'+r.date))fresh.push(['Pre-session briefing ready',r.briefing.text.split('\n')[0],'brief'+r.date])}catch{}
  const first=!L('seenIntel',null);fresh.forEach(f=>seen.add(f[2]));W('seenIntel',[...seen].slice(-400));if(!first)fresh.slice(0,3).forEach(f=>notify(f[0],f[1]));emit()}
 async function briefing(){try{const r=await (await fetch(API+'/briefing')).json();J.briefing=r.briefing;J.reports=r.reports||J.reports;emit()}catch{}}J.refresh=poll;J.loadBriefing=briefing;
 const sec=(t,k)=>{const m=t.match(new RegExp(k+'\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*[A-Z/ ]{3,12}:|$)','i'));return m?m[1].trim().replace(/\s+/g,' '):''};

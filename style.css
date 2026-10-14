@@ -102,7 +102,7 @@ section>.row:first-child{background:var(--card);border:1px solid var(--line);bor
 @media(max-width:800px){.calnav h2{font-size:15px;flex:1}.calnav{flex:1 1 100%}.calact{flex:1 1 100%}.calact .seg{flex:0 0 auto}.calact #propose{flex:1}
  .calscroll{height:calc(100vh - 330px)}
  #sheet{align-items:flex-end;padding:0}.sheetCard{max-width:none;border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));max-height:88vh}}
-/* ===== JARVIS theme layer ===== */
+/* ===== DAVOS theme layer ===== */
 :root{--bg:#05080d;--card:rgba(14,24,36,.62);--line:rgba(0,229,255,.16);--tx:#e8f6ff;--mu:#7f97a8;--ac:#f2c14e;--cy:#00e5ff;--gr:#2ee6a6;--rd:#ff5470;--glow:0 0 0 1px rgba(0,229,255,.08),0 8px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04)}
 html{-webkit-text-size-adjust:100%}
 body{background:radial-gradient(1200px 600px at 70% -10%,rgba(0,229,255,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(242,193,78,.07),transparent 60%),var(--bg) fixed;font:14.5px/1.5 Inter,"SF Pro Text",system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:.1px;overflow-x:hidden}
@@ -132,7 +132,7 @@ button.danger{border-color:rgba(255,84,112,.5);color:var(--rd)}
 td,th{border-bottom:1px solid rgba(0,229,255,.08)}th{color:var(--mu);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.8px}
 .tv{border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--glow);max-width:100%}
 #ticker{border-radius:0;border-left:0;border-right:0}
-/* JARVIS core */
+/* DAVOS core */
 #chat.on{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .jv-core{position:relative;display:flex;flex-direction:column;min-width:0;background:linear-gradient(180deg,rgba(0,229,255,.06),rgba(14,24,36,.55));border:1px solid rgba(0,229,255,.25);border-radius:20px;padding:14px;box-shadow:0 0 40px rgba(0,229,255,.08),var(--glow);overflow:hidden}
 .jv-head{display:flex;align-items:center;gap:14px;padding:4px 4px 12px;border-bottom:1px solid var(--line);margin-bottom:8px}
@@ -157,7 +157,7 @@ td,th{border-bottom:1px solid rgba(0,229,255,.08)}th{color:var(--mu);font-weight
 /* overflow guards */
 main,section,.card,.row,.grid2,.grid3{min-width:0}.row>*{min-width:0}.grid2>*,.grid3>*{min-width:0}img,iframe,canvas,table{max-width:100%}
 .card{overflow-x:auto}
-/* desktop command centre: JARVIS pinned beside the active section */
+/* desktop command centre: DAVOS pinned beside the active section */
 @media(min-width:1180px){
  main{display:grid;grid-template-columns:minmax(380px,440px) minmax(0,1fr);gap:18px;align-items:start}
  #chat{display:grid!important;grid-column:1;grid-row:1/span 20;position:sticky;top:70px;grid-template-columns:minmax(0,1fr)}

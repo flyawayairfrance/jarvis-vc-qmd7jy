@@ -1,4 +1,4 @@
-/* JARVIS presentational layer: orb state + alerts feed mirror. No app logic. */
+/* DAVOS presentational layer: orb state + alerts feed mirror. No app logic. */
 (function(){
   var orb=document.getElementById('jvOrb'),st=document.getElementById('jvStatus'),feed=document.getElementById('jvAlerts');
   function busy(){var t=document.getElementById('typing');var b=!!t;orb&&orb.classList.toggle('busy',b);if(st)st.textContent=b?'Processing…':'Online · standing by'}
@@ -23,7 +23,7 @@
   function empty(box,msg){box.innerHTML='';var d=el('div','jv-empty');d.appendChild(el('span','jv-sample','Awaiting data'));d.appendChild(el('p','muted',msg));box.appendChild(d)}
   function renderNewsReports(list){var box=document.getElementById('jarvisNewsReports');if(!box)return;
     if(list&&!Array.isArray(list))list=list.items||list.reports||[list];
-    if(!list||!list.length)return empty(box,'No reports yet. JARVIS will post headlines, impact, affected assets and what to watch here.');
+    if(!list||!list.length)return empty(box,'No reports yet. DAVOS will post headlines, impact, affected assets and what to watch here.');
     box.innerHTML='';list.forEach(function(r){var c=el('article','jv-rep');var h=el('div','jv-rephd');
       var im=String(r.impact||'low').toLowerCase();im=im[0]=='h'?'high':im[0]=='m'?'med':'low';
       h.appendChild(el('span','jv-imp '+im,im=='med'?'MED':im.toUpperCase()));h.appendChild(el('b',null,r.headline||r.title||''));c.appendChild(h);
